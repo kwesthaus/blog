@@ -7,21 +7,16 @@
 module.exports = {
     // The `meta` object is sent to every template.
     meta: {
-        title: "Site Title",
-        description: "This blog is statically awesome!",
-        author: "Matt Hall",
+        title: "Kyle Westhaus",
+        description: "A blog about topics which interest Kyle Westhaus, an Eagle Scout and student at The Ohio State University. Expect security research, Linux configuration, ultralight backpacking, and modern adventuring content.",
+        author: "kwesthaus",
     },
     // All authors must be defined here.
     authors: {
-        "first-author": {
-            name: "First Author",
-            short_bio: "short bio catchphrase",
-            bio: "a whole HTML paragraph."
-        },
-        "second-author": {
-            name: "Second Author",
-            short_bio: "a short bio.",
-            bio: "a whole HTML paragraph."
+        "kwesthaus": {
+            name: "Kyle Westhaus",
+            short_bio: "Security Researcher, Astronomer, Cartographer, Adventurer, CSE Student at The Ohio State University",
+            bio: ""
         }
     },
     config: {
