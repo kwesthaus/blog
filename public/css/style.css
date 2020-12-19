@@ -1,0 +1,39 @@
+header {
+    padding-top: 1vw !important;
+    padding-bottom: 1vw !important;
+    margin-bottom: 1vw !important;
+}
+
+body {
+    max-width: 960px !important;
+}
+
+.flexrow {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.flexcol {
+    display: flex;
+    flex-direction: column;
+    width: 48%;
+}
+
+.flexauto {
+    flex: auto;
+}
+
+#biopicture {
+    flex: initial;
+    width: 182px;
+    height: 237px;
+    border-radius: 10%;
+    margin-right: 2vw;
+}
+
+@media screen and (max-width: 650px) {
+    .flexrow { flex-wrap: wrap; }
+    .flexcol { width: auto; flex: auto; }
+}
+

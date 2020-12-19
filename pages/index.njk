@@ -1,6 +1,46 @@
 {% extends "templates/base.njk" %}
 
 {% block body %}
-    <h1>Homepage</h1>
+    <div id="main">
+        <div class="flexrow">
+            <img id="biopicture" src="/public/images/headshot.jpg" alt="Headshot of author">
+            <div class="flexauto">
+                <h1>Kyle Westhaus</h1>
+                <p>
+                    <a href="/public/files/Westhaus-Resume.pdf">Resume</a>
+                    |
+                    <a href="mailto:westhaus.3@osu.edu">westhaus.3@osu.edu</a>
+                    |
+                    <a href="https://github.com/kwesthaus">GitHub</a>
+                    |
+                    <a href="https://www.linkedin.com/in/kyle-westhaus-sec/">LinkedIn</a>
+                </p>
+                <p>{{ meta.description }}</p>
+            </div>
+        </div>
+        <div id="container">
+            <div class="flexrow">
+                <div class="flexcol">
+                    <h2>Tech</h2>
+                    {% markdown %}
+                    - I reverse engineered the RF protocol in use by 35 million E-ZPass toll booth transponders, demonstrated the ability to perform replay and spoofing attacks with low-cost ($80) hardware, and explained the business implications of my findings to the E-ZPass CEO. See my [conference talk](https://www.youtube.com/watch?v=rBQKlgxHUYw) and [code](https://github.com/kwesthaus/ez-sniff).
+                    - I have competed and placed in various Capture the Flag competitions as well as created challenges for Ohio State's BuckeyeCTF. I specialize in reverse engineering, program analysis, network attacks, and RF/wifi cracking.
+                    - During Spring 2021 I led a group of 6 students with minimal security experience to create a simplified Nmap-style network scanner involving low-level socket programming. See the result on [GitHub](https://github.com/kwesthaus/UrbanRain).
+                    - I maintain an easily-transportable backup server on an Odroid C2 to practice server hardening and Linux skills. Check out the [configuration files](https://github.com/kwesthaus/odroid-server-config).
+                    {% endmarkdown %}
+                </div>
+                <div class="flexcol">
+                    <h2>Adventure</h2>
+                    {% markdown %}
+                    - After graduating high school, I spent 54 days hiking 614.9 miles on the Appalachian Trail. Read my [trail journal](https://www.trailjournals.com/adventurousreflection).
+                    - I drove to Western Kansas during Summer 2020 to see what remains of the old Great Bend Army Airfield where my Grandpa trained for World War II. I made sure to check out what's left of the Great Plains along the way.
+                    - In the Summer of 2019 I traveled to Shenandoah National Park and hiked the majority of the Appalachian Trail section through the park. I also celebrated the 50th anniversary of the moon landing on the National Mall.
+                    - I led my crew on a trek at Philmont Scout Reservation in New Mexico in 2016.
+                    {% endmarkdown %}
+                </div>
+            </div>
+        </div>
+    </div>
 
 {% endblock %}
+

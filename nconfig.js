@@ -8,7 +8,7 @@ module.exports = {
     // The `meta` object is sent to every template.
     meta: {
         title: "Kyle Westhaus",
-        description: "A blog about topics which interest Kyle Westhaus, an Eagle Scout and student at The Ohio State University. Expect security research, Linux configuration, ultralight backpacking, and modern adventuring content.",
+        description: "This is the personal website of Kyle Westhaus, an Eagle Scout and student at The Ohio State University. I host a blog here as well as a couple pages with more information about me. Expect content about security research, Linux configuration, ultralight backpacking, and various other outdoors adventures.",
         author: "kwesthaus",
     },
     // All authors must be defined here.
