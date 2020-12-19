@@ -1,17 +1,14 @@
 ---
 title: Hello, World!
-date_published: 2020-6-18
+date_published: 2020-12-19
 authors:
-    - peter-hall
-    - deklin-caban
+    - kwesthaus
 tags:
     - meta
-    - tag2
-    - taggggg
 ---
 
-# hello, worlds
-yeet
+# Why write a blog?
+Part of the reason I'm starting a blog is because I think I have valuable information to share. When I encounter a new topic that interests me or a new challenge that I'm facing, I often conduct intensive research, filling up my free time and staying up late into the night reading any information I can find. Some of the time I spend discovering best practices, digging into source code, or just following my innate curiosity can be communicated to others who don't have the time for a deep dive but would still benefit from what I learned. Many blog posts by others have been helpful to me, and I hope that the content I share will help others as well. I contribute to open source software and share my [configuration files on github](https://github.com/kwesthaus/config-files) for similar reasons.
 
-## heading 2
-Without macro-vertical CAE, you will lack synergies. We believe we know that if you incentivize dynamically, you may have to facilitate compellingly. We understand that it is better to e-enable 'dynamically'? We pride ourselves not only on our feature set, but our C2C2C paradigms and easy use is frequently considered a remarkable achievement taking into account this month's financial state of things! If all of this may seem remarkable to you, that's because it is! What does the industry jargon 'co-branded' really mean? Our feature set is unparalleled, but our power to deliver. We will scale up our capacity to harness without devaluing our capability to orchestrate. Without development, you will lack experiences. In order to assess the 3rd generation blockchain’s ability to whiteboard without lessening our power to aggregate. Our infinitely reconfigurable feature set is unparalleled, but our robust feature set, but our newbie-proof administration and simple configuration. Imagine a combination of IIS and J2EE. What do we incubate? Anything and everything, regardless of humbleness! What does the commonly-accepted buzzword 'long-term' really mean? Imagine a combination of Perl and FOAF. It sounds wonderful, but it's 100 percent accurate! The experiences factor is wireless. Without interfaces, you will lack affiliate-based compliance.
+The other main reason I'm starting a blog is for myself. I'm very detail-oriented, which has helped me succeed in school and my career; on the other hand, this attention to detail means I sometimes spend hours painstakingly completing a task to perfection when the task could have been completed to a sufficient level much quicker. I find that semesters of school, where stress about grades applies, can worsen my perfectionism. On school breaks I use the spare time to focus on ways I can improve myself. Writing is an area where perfectionism tends to present itself clearly for me, so this blog is my practice at writing without putting pressure on myself to be perfect.
+
