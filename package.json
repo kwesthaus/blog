@@ -18,6 +18,6 @@
   },
   "homepage": "https://github.com/kwesthaus/blog#readme",
   "devDependencies": {
-    "neanderthal": "^0.1.13"
+    "neanderthal": "^0.1.14"
   }
 }
