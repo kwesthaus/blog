@@ -12,7 +12,7 @@ tags:
 
 ## (Skip to the [Process](#process) section for just the instructions and a tl;dr)
 
-Like many people with Android phones, I keep my Google Pixel 4a rooted to gain greater control over the device. Though some reasons to root (e.g. ad blocking, YouTube Vanced) have developed more viable non-root alternatives over time, I still find that I enjoy:
+Like many people with Android phones, I keep my [Google Pixel 4a](https://www.gsmarena.com/google_pixel_4a-10123.php) rooted to gain greater control over the device. Though some reasons to root (e.g. ad blocking, YouTube Vanced) have developed more viable non-root alternatives over time, I still find that I enjoy:
 - automatic updates for F-Droid apps through the [privileged extension](https://f-droid.org/en/packages/org.fdroid.fdroid.privileged/)
 - charge limiting via the [Advanced Charging Controller Magisk module](https://github.com/Magisk-Modules-Repo/acc)
 - thorough (system app and special) backups using [oandbackup](https://github.com/jensstein/oandbackup)/[oandbackupx](https://github.com/machiav3lli/oandbackupx)
