@@ -69,7 +69,7 @@ Since Boot Method C devices are A/B devices, updates are applied to the inactive
 22. on phone, open settings and verify new build number
 23. open Magisk Manager, verify that the "Installed" property listed under "Magisk" gives a version number as opposed to "N/A"
 24. (optional) if you disabled MagiskHide Props Config and wish to re-enable:
-    - check to make sure you still have to do this by opening Magisk Manager on phone and selecting "Check SafetyNet" to see current status. if fails:
-        - re-enable by opening terminal, running `su -c props` and selecting desired options, then rebooting when prompted
-        - verify that SafetyNet now passes
+    1. check to make sure you still have to do this by opening Magisk Manager on phone and selecting "Check SafetyNet" to see current status. if fails:
+        1. re-enable by opening terminal, running `su -c props` and selecting desired options, then rebooting when prompted
+        2. verify that SafetyNet now passes
 
