@@ -10,7 +10,7 @@ tags:
     - google
 ---
 
-## (Skip to the Process section for just the instructions and a tl;dr)
+## (Skip to the Process section for just the instructions and tl;dr)
 
 Like many people with Android phones, I keep my [Google Pixel 4a](https://www.gsmarena.com/google_pixel_4a-10123.php) rooted to gain greater control over the device. Though some reasons to root (e.g. ad blocking, YouTube Vanced) have developed more viable non-root alternatives over time, I still find that I enjoy:
 - automatic updates for F-Droid apps through the [privileged extension](https://f-droid.org/en/packages/org.fdroid.fdroid.privileged/)
@@ -42,34 +42,51 @@ Since Boot Method C devices are A/B devices, updates are applied to the inactive
 
 ### Detailed Steps
 0. (optional) if using [MagiskHide Props Config](https://github.com/Magisk-Modules-Repo/MagiskHidePropsConf) to change the device fingerprint (usually done to force BASIC key attestation and thus pass the ctsProfile check of SafetyNet), follow these steps to temporarily reset props and prevent Android from potentially downloading an incorrect OTA update:
+
     1. open terminal, run `su -c props`
     2. select the `r` (reset) option
     3. reboot when prompted
-1. plug in phone, make sure USB mode is set to file sharing on the phone, that USB debugging is enabled and the current computer is approved, and that `sudo adb devices` on the computer returns the phone's serial # (NOTE: notice the sudo)
-2. on computer, open terminal and navigate to directory with boot images for the CURRENT build number (for me, under `~/Documents/tech/devices/phone/pixel4a/$BUILD_NUMBER`) (NOTE: if you do not have these files available, follow steps 8-12 but for the CURRENT build number)
-3. run `sudo adb reboot bootloader`
-4. let phone boot to bootloader, then verify that `sudo fastboot devices` lists the phone's serial #
-5. run `sudo fastboot flash boot boot.img`
-6. run `sudo fastboot reboot`, then let the phone boot normally
-7. on the phone, go to settings, select and install OTA update, reboot when prompted
-8. go to phone settings, note NEW build number
-9. on computer, get stock image (use the Download Link for the zip file, not Flash) for NEW build number on [google's factory images page](https://developers.google.com/android/images?hl=en#sunfish)
-10. extract the downloaded stock zip
-11. in the stock zip, ignore the bootloader and radio img files and extract the image zip
-12. navigate to the same directory as the NEW boot.img in the extracted image zip
-13. run `sudo adb push ./boot.img /sdcard/Download/`
-14. on the phone, ensure boot.img shows up under the Download folder in the Files app
-15. open magisk manager app, check for app updates. if the app updates, reboot (NOTE: if the patching process or ensuing reboot fails, check the [Pixel 4a rooting thread on XDA](https://forum.xda-developers.com/pixel-4a/how-to/guide-unlock-root-pixel-4a-t4153773) to see if you need to change to a specific update channel and return to this step to get boot.img patching to work)
-16. open Magisk Manager, select "Install", select "Select and Patch a File", select the boot.img under the Download folder, select "LET'S GO", let it run until it says "All done!", then close Magisk Manager
-17. on the computer, navigate to directory for the NEW build number and run `sudo adb pull /sdcard/Download/magisk_patched.img ./`
-18. run `sudo adb reboot bootloader`
-19. let phone boot to bootloader, then verify that `sudo fastboot devices` lists the phone's serial #
-20. run `sudo fastboot flash boot magisk_patched.img`
-21. run `sudo fastboot reboot`, then let the phone boot normally
-22. on phone, open settings and verify new build number
-23. open Magisk Manager, verify that the "Installed" property listed under "Magisk" gives a version number as opposed to "N/A"
-24. (optional) if you disabled MagiskHide Props Config and wish to re-enable:
-    1. check to make sure you still have to do this by opening Magisk Manager on phone and selecting "Check SafetyNet" to see current status. if fails:
+
+1. flash stock boot.img for CURRENT Android build number
+
+    1. plug in phone, make sure USB mode is set to file sharing on the phone, that USB debugging is enabled and the current computer is approved, and that `sudo adb devices` on the computer returns the phone's serial # (NOTE: notice the sudo)
+    2. on computer, open terminal and navigate to directory with boot images for the CURRENT build number (for me, under `~/Documents/tech/devices/phone/pixel4a/$BUILD_NUMBER`) (NOTE: if you do not have these files available, follow steps 3.1 through 3.5 but for the CURRENT build number)
+    3. run `sudo adb reboot bootloader`
+    4. let phone boot to bootloader, then verify that `sudo fastboot devices` lists the phone's serial #
+    5. run `sudo fastboot flash boot boot.img`
+    6. run `sudo fastboot reboot`, then let the phone boot normally
+
+2. OTA update
+
+    1. on the phone, go to settings, select and install OTA update, reboot when prompted
+
+3. download stock boot.img for NEW build number
+
+    1. go to phone settings, note NEW build number
+    2. on computer, get stock image (use the Download Link for the zip file, not Flash) for NEW build number on [google's factory images page](https://developers.google.com/android/images?hl=en#sunfish)
+    3. extract the downloaded stock zip
+    4. in the stock zip, ignore the bootloader and radio img files and extract the image zip
+    5. navigate to the same directory as the NEW boot.img in the extracted image zip
+
+4. patch boot.img for NEW build number
+
+    1. run `sudo adb push ./boot.img /sdcard/Download/`
+    2. on the phone, ensure boot.img shows up under the Download folder in the Files app
+    3. open magisk manager app, check for app updates. if the app updates, reboot (NOTE: if the patching process or ensuing reboot fails, check the [Pixel 4a rooting thread on XDA](https://forum.xda-developers.com/pixel-4a/how-to/guide-unlock-root-pixel-4a-t4153773) to see if you need to change to a specific update channel and return to this step to get boot.img patching to work)
+    4. in magisk manager select "Install", select "Select and Patch a File", select the boot.img under the Download folder, select "LET'S GO", let it run until it says "All done!", then close magisk manager
+    5. on the computer, navigate to directory for the NEW build number and run `sudo adb pull /sdcard/Download/magisk_patched.img ./`
+
+5. flash patched boot.img for NEW build number
+
+    1. run `sudo adb reboot bootloader`
+    2. let phone boot to bootloader, then verify that `sudo fastboot devices` lists the phone's serial #
+    3. run `sudo fastboot flash boot magisk_patched.img`
+    4. run `sudo fastboot reboot`, then let the phone boot normally
+    5. on phone, open settings and verify new build number
+    6. open magisk manager, verify that the "Installed" property listed under "Magisk" gives a version number as opposed to "N/A"
+
+6. (optional) if you disabled MagiskHide Props Config and wish to re-enable:
+    1. check to make sure you still have to do this by opening magisk manager on phone and selecting "Check SafetyNet" to see current status. if fails:
         1. re-enable by opening terminal, running `su -c props` and selecting desired options, then rebooting when prompted
         2. verify that SafetyNet now passes
 
