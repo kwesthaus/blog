@@ -71,7 +71,7 @@ Since Boot Method C devices are A/B devices, updates are applied to the inactive
     * sideload update
 
         1. follow steps 3.2 and 3.3, but return here before completing 3.4. for the build number, use the latest build listed for your device on the google page
-        2. edit `flash-all.sh` in the extracted stock zip to remove the `-w` from the `fastboot -w update` command
+        2. edit `flash-all.sh` in the extracted stock zip to remove the `-w` (wipe) from the `fastboot -w update` command
         3. run `sudo adb reboot bootloader`
         4. let phone boot to bootloader, then verify that `sudo fastboot devices` lists the phone's serial #
         5. run `sudo ./flash-all.sh`
