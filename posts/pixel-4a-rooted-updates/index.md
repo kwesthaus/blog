@@ -47,7 +47,7 @@ Since Boot Method C devices are A/B devices, updates are applied to the inactive
 ### Detailed Steps
 0. (optional) if using [MagiskHide Props Config](https://github.com/Magisk-Modules-Repo/MagiskHidePropsConf) to change the device fingerprint (usually done to force BASIC key attestation and thus pass the ctsProfile check of SafetyNet), follow these steps to temporarily reset props and prevent Android from potentially downloading an incorrect OTA update:
 
-    1. open terminal, run `su -c props`
+    1. open terminal on the phone, run `su -c props`
     2. select the `r` (reset) option
     3. reboot when prompted
 
@@ -91,7 +91,7 @@ Since Boot Method C devices are A/B devices, updates are applied to the inactive
 
 6. (optional) if you disabled MagiskHide Props Config and wish to re-enable:
     1. check to make sure you still have to do this by opening magisk manager on phone and selecting "Check SafetyNet" to see current status. if fails:
-        1. re-enable by opening terminal, running `su -c props` and selecting desired options, then rebooting when prompted
+        1. re-enable by opening terminal on phone, running `su -c props` and selecting desired options, then rebooting when prompted
         2. verify that SafetyNet now passes
 
 You can now unplug your phone, which should be updated to the latest version and still rooted. I recommend that you keep the stock and patched boot.img for the next round of updates, but you can get rid of the other files from the factory image.
