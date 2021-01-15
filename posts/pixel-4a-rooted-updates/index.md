@@ -39,7 +39,7 @@ Since Boot Method C devices are A/B devices, updates are applied to the inactive
 
 ### tl;dr
 1. flash stock boot.img for CURRENT Android build number
-2. OTA update
+2. update (OTA or sideload)
 3. download, patch, flash boot.img for NEW build number
 
 [Magisk documentation](https://topjohnwu.github.io/Magisk/) or [XDA](https://www.xda-developers.com/) for questions.
@@ -60,16 +60,30 @@ Since Boot Method C devices are A/B devices, updates are applied to the inactive
     5. run `sudo fastboot flash boot boot.img`
     6. run `sudo fastboot reboot`, then let the phone boot normally
 
-2. OTA update
+2. update
 
-    1. on the phone, go to settings, select and install OTA update, reboot when prompted
+    two options for this step, pick one. I use OTA updates
+
+    * OTA update
+
+        1. on the phone, go to settings -> system -> advanced, select and install system update, reboot when prompted
+
+    * sideload update
+
+        1. follow steps 3.2 and 3.3, but return here before completing 3.4. for the build number, use the latest build listed for your device on the google page
+        2. edit `flash-all.sh` in the extracted stock zip to remove the `-w` from the `fastboot -w update` command
+        3. run `sudo adb reboot bootloader`
+        4. let phone boot to bootloader, then verify that `sudo fastboot devices` lists the phone's serial #
+        5. run `sudo ./flash-all.sh`
+        6. run `sudo fastboot reboot`, then let the phone boot normally
+        7. follow step 3.4 and move forward from there
 
 3. download stock boot.img for NEW build number
 
     1. go to phone settings, note NEW build number
     2. on computer, get stock image (use the Download Link for the zip file, not Flash) for NEW build number on [google's factory images page](https://developers.google.com/android/images?hl=en#sunfish)
     3. extract the downloaded stock zip
-    4. in the stock zip, ignore the bootloader and radio img files and extract the image zip
+    4. in the extracted stock zip, ignore the bootloader and radio img files and extract the image zip
     5. navigate to the same directory as the NEW boot.img in the extracted image zip
 
 4. patch boot.img for NEW build number
