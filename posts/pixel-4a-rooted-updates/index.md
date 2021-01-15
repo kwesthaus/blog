@@ -22,7 +22,7 @@ However, rooting can make the update process more complex, so I am sharing the p
 
 ## Disclaimer
 
-These instructions were written for a Pixel 4a and have worked for me for the past several months. While I have researched this topic to the best of my ability and these directions *should* work for other Pixel 4a or Boot Method C devices (explained in the next section), I make no guarantees for any device and take no responsibility for any issues you may encounter.
+These instructions were written for a Pixel 4a and have worked for me for the past several months. While I have researched this topic to the best of my ability and these directions *should* work for other Pixel 4a or Boot Method C devices (terminology explained in the next section), I make no guarantees for any device and take no responsibility for any issues you may encounter.
 
 ## Rooting Background
 Rooting involves modifying parts of the Android boot chain so as to gain superuser access. Because rooting modifies critical files and the methods used are not officially supported by vendors, rooting (and by the same token custom ROMs) can interfere with updates and sometimes cause bootloops, bricking, or other instability. Thus, having a clear set of update steps to follow can be helpful in avoiding any issues.
