@@ -94,3 +94,4 @@ Since Boot Method C devices are A/B devices, updates are applied to the inactive
         1. re-enable by opening terminal, running `su -c props` and selecting desired options, then rebooting when prompted
         2. verify that SafetyNet now passes
 
+You can now unplug your phone, which should be updated to the latest version and still rooted. I recommend that you keep the stock and patched boot.img for the next round of updates, but you can get rid of the other files from the factory image.
