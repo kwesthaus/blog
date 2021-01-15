@@ -20,6 +20,10 @@ Like many people with Android phones, I keep my [Google Pixel 4a](https://www.gs
 
 However, rooting can make the update process more complex, so I am sharing the process I use to safely update (where "safely" means "with minimal chance of bootlooping/bricking"). Note that this article assumes you have an unlocked bootloader and are already rooted with [Magisk](https://github.com/topjohnwu/Magisk). Some other devices do not allow bootloader unlocking and thus require exploits to gain root.
 
+## Disclaimer
+
+These instructions were written for a Pixel 4a and have worked for me for the past several months. While I have researched this topic to the best of my ability and these directions *should* work for other Pixel 4a or Boot Method C devices (explained in the next section), I make no guarantees for any device and take no responsibility for any issues you may encounter.
+
 ## Rooting Background
 Rooting involves modifying parts of the Android boot chain so as to gain superuser access. Because rooting modifies critical files and the methods used are not officially supported by vendors, rooting (and by the same token custom ROMs) can interfere with updates and sometimes cause bootloops, bricking, or other instability. Thus, having a clear set of update steps to follow can be helpful in avoiding any issues.
 
