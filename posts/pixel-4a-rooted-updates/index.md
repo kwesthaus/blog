@@ -18,7 +18,7 @@ Like many people with Android phones, I keep my [Google Pixel 4a](https://www.gs
 - thorough (system app and special) backups using [oandbackup](https://github.com/jensstein/oandbackup)/[oandbackupx](https://github.com/machiav3lli/oandbackupx)
 - less limitations on programmatic access through [Tasker](https://tasker.joaoapps.com/) (for example, I previously used this ability to automatically turn location on/off in a custom anti-theft solution, though I have since stopped maintaining this method)
 
-However, rooting can make the update process more complex, so I am sharing the process I use to safely update (where "safely" means "with minimal chance of bootlooping/bricking"). Note that this article assumes you have an unlocked bootloader and are already rooted with [Magisk](https://github.com/topjohnwu/Magisk). Some other devices do not allow bootloader unlocking and thus require exploits to gain root.
+However, rooting can make the update process more complex, so I am sharing the process I use to safely update (where "safely" means "with minimal chance of bootlooping/bricking"). Note that this article assumes you have an unlocked bootloader and are already rooted with [Magisk](https://github.com/topjohnwu/Magisk). Some other devices do not allow bootloader unlocking and thus require exploits to gain root. The commands specified on the computer side are for a Linux system, but should be the same for a Windows computer with exceptions for using an Administrator account instead of `sudo` and `flash-all.bat` instead of `flash-all.sh`.
 
 ## Disclaimer
 
