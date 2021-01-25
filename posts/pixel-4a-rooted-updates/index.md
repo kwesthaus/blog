@@ -10,7 +10,7 @@ tags:
     - google
 ---
 
-## (Skip to the Process section for just the instructions and tl;dr)
+## (Skip to the [Process](#process) section for just the instructions and tl;dr)
 
 Like many people with Android phones, I keep my [Google Pixel 4a](https://www.gsmarena.com/google_pixel_4a-10123.php) rooted to gain greater control over the device. Though some reasons to root (e.g. ad blocking, YouTube Vanced) have developed more viable non-root alternatives over time, I still find that I enjoy:
 - automatic updates for F-Droid apps through the [privileged extension](https://f-droid.org/en/packages/org.fdroid.fdroid.privileged/)
