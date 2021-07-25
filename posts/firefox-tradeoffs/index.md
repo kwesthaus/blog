@@ -1,18 +1,37 @@
 ---
-title: "Firefox tradeoffs: history, sessions, and cookies"
-date_published: 2021-04-06
+title: "Firefox tradeoffs: sessions, history, and cookies"
+date_published: 2021-07-25
 authors:
     - kwesthaus
 tags:
     - firefox
     - linux
     - privacy
-    - convenience
+    - configuration
 ---
+
+
+## Background
+
+Arch Linux, my daily driver operating system, [doesn't support partial upgrades](https://wiki.archlinux.org/title/System_maintenance#Partial_upgrades_are_unsupported). This means that sometimes I go to install a new package and can't do so without upgrading all the packages on my system because a new version has been released since I last synced my local pacman database. Even with the LTS kernel (less frequent updates), most times upgrading all packages includes the kernel, for which [rebooting after upgrading is recommended](https://wiki.archlinux.org/title/System_maintenance#Restart_or_reboot_after_upgrades). Consequently, installing a new package involves rebooting your computer a decent amount of the time if you're following system maintenance best practices. For me, the biggest pain point in this scenario was losing my browsing session because I had Firefox set to clear everything on close.
+
+With technology, I often used to take the extreme approach of turning off all features with even a slight chance of compromising privacy or security. While this approach is effective at reducing my attack surface and the amount of information corporations have about me to bundle up and sell, it certainly doesn't boost convenience. More recently I try to balance that approach with more realistic threat modeling so I know which settings actually matter and which settings just make my life more difficult without a significant improvement in security or privacy. My existing Firefox settings made upgrading painful; to get around losing my session on every close, I either delayed upgrades (exposing myself to known vulnerabilities) until I finished long-running projects that I had many Firefox tabs open for, or bookmarked every tab before closing then reopened them all when restarting (time consuming). I thought this was a good chance to reevaluate my settings to see what tradeoffs would be involved in allowing session restore. I also wanted to see what settings changes would be required for [multi-account containers](https://support.mozilla.org/en-US/kb/containers), which would reduce another pain point by enabling me to log in and out of my personal google account and the cybersecurity club google account independent of each other.
+
+
+## Ground Truth
+
+After reading many articles trying to understand Firefox sessions, cookies, the preferences menu, and about:config hacks, I realized it can be confusing trying to understand all the options for preference menu settings and what other settings they unlock. Additionally, all the settings in the preferences menu of Firefox map to about:config settings, but the exact mapping isn't publicly documented in an easily digestible format anywhere. So, I saved the about:config page to a text file for every combination of options for a subset of the settings on the about:preferences page for Privacy & Security and used grep to figure out the exact mapping. 
+
+Using the diffs, I set about drawing the relationship between various preference menu settings and their underlying about:config settings. My results are shown in the images below. Also visualized is the relationship betweem settings which unlock others. For example, under the Enhanced Tracking Protection section, choosing Standard sets 8 about:config settings. Choosing Custom instead only sets 2 about:config settings, and reveals further menus which affect the remainig about:config settings.
+
+TODO: images
+
+The about:config settings were all captured in April 2021. I should have recorded the exact version of Firefox, but I forgot to.
+
 
 ## History
 
-I used to choose Firefox settings solely based on what I believed would maximize my privacy and security with complete disregard for usability. However, I have recently walked back some of these choices based on a more realistic threat/privacy/productivity model for myself. For example, I used to have {settings}. However, within the past few months I realized it would be helpful to enable [multi-account containers](https://support.mozilla.org/en-US/kb/containers) so I can log in and out of personal and school club google accounts regardless of each other. After installing the add-on, I realized that my [history setting conflicted with containers](https://support.mozilla.org/en-US/questions/1292668). I could still {caveat setting} if I wanted, but decided to re-evaluate living without browser history and realized that while I try to bookmark everything important, there are definitely some occurrences of me wasting time trying to find a site I have already browsed to before. In terms of a threat model:
+Ultimately I needed to switch away from "Never remember history" to enable session restore and container tabs. I mostly care about not giving my history away to some data aggregator to sell, but here's everything I could think of for a threat model for enabling browser history:
 
 - Most cases of leaked browsing history that I could find arose from installing sketchy browser addons. I only have 2 addons with the [Access browsing history](https://support.mozilla.org/en-US/kb/permission-request-messages-firefox-extensions#w_access-browsing-history) permission, and I trust both of them: [Vimium](https://github.com/philc/vimium), which is open source, and Firefox Multi-Account Containers, which is an official Mozilla extension
 - My SSD is encrypted which prevents an attacker from quickly reading my history file or anything else on the filesystem if my laptop gets stolen
@@ -20,42 +39,23 @@ I used to choose Firefox settings solely based on what I believed would maximize
 - If another program with malicious intent on my computer could read the places.sqlite file where Firefox stores history, it would have access to many other interesting targets and information across my home directory and potentially the rest of my computer
 - If a page I visit/extension I install uses an exploit and could access history without my permission, it could probably access other more interesting browser APIs without interaction
 
-I personally decided that the benefits outweigh the risks for me, so I now have Firefox set to keep browser history {exact setting?}.
+I personally decided that the benefits outweigh any risks for me, so I now have Firefox set to "Use custom settings for history" (for more granular control over some other settings) with "Remember browsing and download history" enabled.
 
-## Sessions
+TODO: also specify about:config settings?
 
-More recently, for reasons I'll get into in another blog post (tl;dr: Arch Linux doesn't support partial upgrades), I realized my existing Firefox habits were pushing me to delay updating my computer. I had Firefox set to clear {specific settings} on close. Closing firefox would get rid of everything, including open tabs and logged-in sessions. When I wanted to save the tabs I had open, I would select them all and right click -> Bookmark tabs so that I could later right click on saved bookmarks folder -> Open all in tabs. However, having to do that and re-log in to accounts every time I closed and opened firefox was a pain, so I avoided completely closing firefox whenever possible. To fix this annoyance I evaluated Firefox's session restore feature, which when starting Firefox gives you the option to return to how it was before you closed it.
-
-CHANGE PREVIOUS 2 PARAGRAPHS - I didn't actually decide to KEEP history until needing session restore
-
-I still had to log in to all my accounts again even when I restored a previous session. I realized doing this necessarily requires getting rid of cookie autodelete for ALL cookies, so I searched for a way to only allow some cookies to persist between closing and re-opening firefox. Turns out it's possible but convoluted. There are some conflicting settings and it's not exactly clear what the settings do at a technical level or what threats different options enable, so I verified the behavior myself. The relevant settings are {}, both of which can be enabled or disabled, giving us 4 combinations. To further understand what's going on requires a quick look into cookies.
 
 ## Cookies
 
-https://privacy.net/stop-cookies-tracking/
-https://robertheaton.com/2017/11/20/how-does-online-tracking-actually-work/
-https://wiki.mozilla.org/Session_Restore
+Now session restore was a possbility, but I still had to log in to all my accounts again when I restored a previous session. I realized changing this necessarily requires getting rid of some cookie autodelete settings. While I determined history settings don't really affect how much data you leak to the outside world, that is definitely not true for cookies, which form the foundations of tracking on the web. Cookies could be their own blog post, but there are already good sources for [explaining](https://robertheaton.com/2017/11/20/how-does-online-tracking-actually-work/) and [testing](https://alanhogan.github.io/web-experiments/3rd/third-party-cookies.html) how [cookie tracking works](https://privacy.net/stop-cookies-tracking/) so I won't go too deep into them here. The important information is that I was interested in finding a more granular way to control cookie deletion than just a big on/off switch which affected cookies from all sites equally. In searching for a way to only allow some cookies to persist between closing and re-opening Firefox I found that it's possible but convoluted. Keep in mind that cookies can also be affected by browser addons, but I won't cover that here.
 
-persistent vs session, remember me?
-first vs third party
-threat of third party cookies
+Cookies are a prime example of how the preferences menu is confusing:
+1. there's a "Delete cookies and site data when Firefox is closed" setting (paired with a "Manage Exceptions" button) under the "Cookies and Site Data" section
+2. there's a "Cookies" option presented by clicking on the "Settings..." button next to "Clear history when Firefox closes" under the "History" section.
+3. when you select "Custom" for "Enhanced Tracking Protection", there are multiple options for which cookies to block
 
-So I decided what I wanted to do was test both session and persistent cookies on starting a new session and restoring an existing one for each of the above 4 combinations.
+Using the diagram I made, we can see that #1 affects the `network.cookie.lifetimePolicy` about:config setting while #2 affects the `privacy.clearOnShutdown.cookies` and `privacy.sanitize.pending[0]["itemsToClear"]` about:config settings and #3 affects the `network.cookie.cookieBehavior` setting. That knowledge in itself isn't much more helpful, but in my experience searching about:config settings gets you much more specific answers than searching preference menu settings. For my specific case, I learned through searching and a healthy dose of trial and error that cookie deletion is affected by both #1 and #2 (while #3 affects which cookies are accepted in the first place). Disabling #2 gave full control to #1, so the "Manage Execeptions" button actually works as intended (which is NOT true if both of the cookie deletion options are enabled). Now I can stay logged in to a select few websites across sessions without also persisting a bunch of tracking cookies.
 
-results
-
-realized also affected by Firefox third-party cookies setting, and uMatrix options
-
-## Final Choices
-
-what I ended up doing
-block all cookies, have exceptions, cause most websites I care about set persistent login cookies that I can whitelist and not have to worry about
-set firefox third-party to less strict so that I can more easily selectively enable using uMatrix
-
-https://alanhogan.github.io/web-experiments/3rd/third-party-cookies.html
 
 ## Conclusion
 
-hope this was
-- helpful practice and discussion of evaluating reasonable threat/privacy/productivity model
-- helpful to understand the underling technology behind some of these choices
+Ultimately I'm happy that I was able to find settings which make it easier and more productive to use my laptop while still giving me some control over the information I spew out to the internet. I hope the diagrams both show that Firefox settings can be a bit messy and help others navigate this mess in the future. I definitely dove deeper into this topic than any reasonable person can be expected to in the name of "privacy". I also hope this post serves as helpful practice discussing and evaluating reasonable threat/privacy/productivity models.
