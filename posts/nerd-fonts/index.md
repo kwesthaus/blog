@@ -28,11 +28,11 @@ Recently, I wanted to configure i3wm to include active programs in displayed wor
 
 Here's the Arch Linux icon with `mononoki Nerd Font Mono`:
 
-![screenshot of Arch Linux icon with mononoki Nerd Font Mono showing tiny size](icon-mono.png)
+![screenshot of Arch Linux icon with mononoki Nerd Font Mono showing tiny size](/public/images/icon-mono.png)
 
 Here's the Arch Linux icon with `mononoki Nerd Font` (NOT mono):
 
-![screenshot of Arch Linux icon with mononoki Nerd Font (NOT mono) showing overlap with following characters](icon-variable.png)
+![screenshot of Arch Linux icon with mononoki Nerd Font (NOT mono) showing overlap with following characters](/public/images/icon-variable.png)
 
 - Another helpful command for font troubleshooting: `fc-list`
 - Out of the special icons I use for i3wsr, something is weird about the discord icon. The character I currently use (copied from the Font Awesome website) only shows up if `ttf-font-awesome` is installed (otherwise it just outputs the unsupported unicode character rectangle). Additionally, the glyph output with `echo $i_mdi_discord` shows up regardless of ttf-font-awesome, but appears BEFORE the workspace number when used with i3wsr!
