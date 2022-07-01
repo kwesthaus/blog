@@ -15,6 +15,6 @@ The plan: Just like I did a [trip after after graduating high school](https://ww
 
 ## Pictures
 
-![Map of general route: Ohio, Kentucky, Tennessee, A…Mexico, Arizona, Utah, Idaho, Oregon, Washington](/public/images/dayton-seattle-road-trip-day-00/2022-06-29T13:10:32-04:00.png)
+![Map of general route: Ohio, Kentucky, Tennessee, Arkansas, Oklahoma, Texas, New Mexico, Arizona, Utah, Idaho, Oregon, Washington](/public/images/dayton-seattle-road-trip-day-00/2022-06-29T13:10:32-04:00.png)
 
 
