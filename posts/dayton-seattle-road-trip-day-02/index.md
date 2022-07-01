@@ -20,10 +20,10 @@ I tried to sleep in my car last night and failed, it was way too hot. I saw the 
 
 ## Pictures
 
-![The Parthenon in Nashville](/public/images/dayton-seattle-road-trip-day-02/)
+![The Parthenon in Nashville](/public/images/dayton-seattle-road-trip-day-02/PXL_20220626_151912638.jpg)
 
-!["I Believe in Nashville" Mural](/public/images/dayton-seattle-road-trip-day-02/)
+!["I Believe in Nashville" Mural](/public/images/dayton-seattle-road-trip-day-02/PXL_20220626_155637881.MP.jpg)
 
-![Trying out Memphis-style brisket at Central BBQ](/public/images/dayton-seattle-road-trip-day-02/)
+![Trying out Memphis-style brisket at Central BBQ](/public/images/dayton-seattle-road-trip-day-02/PXL_20220626_223519129.jpg)
 
 
