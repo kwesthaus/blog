@@ -1,6 +1,6 @@
 ---
 title: Dayton -> Seattle Road Trip, Day 1
-date_published: 2022-07-01
+date_published: 2022-06-25
 authors:
     - kwesthaus
 tags:
