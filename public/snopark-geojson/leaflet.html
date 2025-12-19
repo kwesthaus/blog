@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Leaflet Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""/>
+    <style type="text/css">
+      body{
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+    <script>
+    // <script type="module">
+        // import geojson from './testapi.geojson';
+
+        const map = L.map('map', {
+            // washington state
+            center: [47.5, -121],
+            zoom: 8.5
+        });
+        /*
+        L.marker([47.5, -122]).addTo(map);
+        L.marker([40, -82]).addTo(map);
+        */
+
+        function jsonToTable(jdata) {
+            let table = '<table><tbody>'
+
+            let props = Object.keys(jdata);
+            props.forEach(prop => {
+                table += '<tr>';
+                table += `<th>${prop}</th>`;
+                table += `<td>${jdata[prop]}</td>`;
+                table += '</tr>';
+            });
+
+            table += '</tbody></table>';
+            return table;
+        }
+
+        function eachFeature(feature, layer) {
+            var mytable = jsonToTable(feature.properties);
+            layer.bindPopup(mytable);
+        }
+
+        async function addGeojsonFileToControl(fileName, layerName, pathStyle, pointStyle, control, onByDefault) {
+            let mygeo = await fetch(fileName).then(resp => resp.json());
+            let mylayer = L.geoJson(mygeo, {
+                onEachFeature: eachFeature, // popup
+                style: pathStyle, // lines + polygons
+                pointToLayer: pointStyle // points
+            });
+
+            control.addOverlay(mylayer, layerName);
+            if (onByDefault) {
+                mylayer.addTo(map);
+            }
+        }
+
+
+
+
+        const baseMaps = {
+            StreetView: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',   {attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}),
+            TopoView: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',   {attribution: 'Kartendaten: © OpenStreetMap-Mitwirkende, SRTM | Kartendarstellung: © OpenTopoMap (CC-BY-SA)'}),
+            USGS_USTopo: L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', {maxZoom: 20, attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'})
+        };
+
+        var layerControl = L.control.layers(baseMaps, undefined, {collapsed: false}).addTo(map);
+        // default
+        baseMaps.TopoView.addTo(map);
+
+
+
+
+        let motorStyle = {
+            'color': '#ff0000',
+            'weight': 4
+        };
+        addGeojsonFileToControl('uniqueID-geojson/motorized.geojson', 'motorized', motorStyle, undefined, layerControl, true);
+
+        let nonmotorStyle = {
+            'color': '#0000ff',
+            'weight': 4
+        };
+        addGeojsonFileToControl('uniqueID-geojson/nonmotorized.geojson', 'nonmotorized', nonmotorStyle, undefined, layerControl, true);
+
+        let wildStyle = {
+            'fillColor': '#00ff00',
+            'color': '#007f00',
+            'weight': 4,
+            'opacity': 1,
+            'fillOpacity': 0.4
+        };
+        addGeojsonFileToControl('uniqueID-geojson/wilderness.geojson', 'wilderness', wildStyle, undefined, layerControl, true);
+
+
+
+
+        let parkStyle = function(feature, latlng) {
+            var parkIcon = L.icon({
+                iconUrl: 'icons/Parking.svg',
+                iconSize: [16, 16]
+            });
+            return L.marker(latlng, {icon: parkIcon});
+        };
+        addGeojsonFileToControl('uniqueID-geojson/snoparks.geojson', 'snoparks', undefined, parkStyle, layerControl, true);
+
+
+        map.createPane("summitMarker");
+        // see https://github.com/Leaflet/Leaflet/blob/v1.0.0/dist/leaflet.css#L87 to compare values
+        map.getPane("summitMarker").style.zIndex = 600;
+
+        let fourStyle = function(feature, latlng) {
+            var circleOptions = {
+                pane: "summitMarker",
+                radius: 6,
+                fillColor: '#aea727',
+                color: '#ffffff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 1
+            };
+            return L.circleMarker(latlng, circleOptions);
+        };
+        addGeojsonFileToControl('uniqueID-geojson/W7W-4pts.geojson', 'summits-4', undefined, fourStyle, layerControl, true);
+
+        let sixStyle = function(feature, latlng) {
+            var circleOptions = {
+                pane: "summitMarker",
+                radius: 6,
+                fillColor: '#efa818',
+                color: '#ffffff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 1
+            };
+            return L.circleMarker(latlng, circleOptions);
+        };
+        addGeojsonFileToControl('uniqueID-geojson/W7W-6pts.geojson', 'summits-6', undefined, sixStyle, layerControl, true);
+
+
+    </script>
+  </body>
+</html>
+
