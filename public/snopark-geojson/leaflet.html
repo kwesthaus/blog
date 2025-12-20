@@ -85,7 +85,9 @@
 
 
 
-
+        //
+        // lines
+        //
         let motorStyle = {
             'color': '#ff0000',
             'weight': 4
@@ -98,18 +100,63 @@
         };
         addGeojsonFileToControl('uniqueID-geojson/nonmotorized.geojson', 'nonmotorized', nonmotorStyle, undefined, layerControl, true);
 
+
+
+        //
+        // polygons
+        //
         let wildStyle = {
-            'fillColor': '#00ff00',
-            'color': '#007f00',
+            'fillColor': '#009f00',
+            'color': '#004f00',
             'weight': 4,
             'opacity': 1,
             'fillOpacity': 0.4
         };
-        addGeojsonFileToControl('uniqueID-geojson/wilderness.geojson', 'wilderness', wildStyle, undefined, layerControl, true);
+        addGeojsonFileToControl('uniqueID-geojson/wa-wilderness.geojson', 'wilderness', wildStyle, undefined, layerControl, true);
+
+        let grwBoundaryStyle = {
+            'fillColor': '#ff0000',
+            'color': '#7f0000',
+            'weight': 4,
+            'opacity': 1,
+            'fillOpacity': 0.4
+        };
+        addGeojsonFileToControl('uniqueID-geojson/greenriver-watershed-boundary.geojson', 'gr-watershed-boundary', grwBoundaryStyle, undefined, layerControl, true);
+
+        let wshedAreaStyle = function(feature) {
+            let fc = '#000000';
+            let c = '#000000';
+            switch (feature.properties.access) {
+                case 'knownGood':
+                    fc = '#00ff00';
+                    c = '#007f00';
+                    break;
+                case 'questionable':
+                    fc = '#ffff00';
+                    c = '#7f7f00';
+                    break;
+                case 'no':
+                    fc = '#ff0000';
+                    c = '#7f0000';
+                    break;
+            }
+            return {
+                'fillColor': fc,
+                'color': c,
+                'weight': 4,
+                'opacity': 1,
+                'fillOpacity': 0.4
+            };
+        }
+        addGeojsonFileToControl('uniqueID-geojson/grw-areas.geojson', 'green-watershed-areas', wshedAreaStyle, undefined, layerControl, true);
+
+        // https://www.openstreetmap.org/way/577601007
+        addGeojsonFileToControl('uniqueID-geojson/crw-area.geojson', 'cedar-watershed-areas', wshedAreaStyle, undefined, layerControl, true);
 
 
-
-
+        //
+        // points
+        //
         let parkStyle = function(feature, latlng) {
             var parkIcon = L.icon({
                 iconUrl: 'icons/Parking.svg',
@@ -118,6 +165,15 @@
             return L.marker(latlng, {icon: parkIcon});
         };
         addGeojsonFileToControl('uniqueID-geojson/snoparks.geojson', 'snoparks', undefined, parkStyle, layerControl, true);
+
+        let grGateStyle = function(feature, latlng) {
+            var gateIcon = L.icon({
+                iconUrl: 'icons/Red_X.svg',
+                iconSize: [16, 16]
+            });
+            return L.marker(latlng, {icon: gateIcon});
+        };
+        addGeojsonFileToControl('uniqueID-geojson/greenriver-watershed-gates.geojson', 'gr-watershed-gates', undefined, grGateStyle, layerControl, true);
 
 
         map.createPane("summitMarker");
