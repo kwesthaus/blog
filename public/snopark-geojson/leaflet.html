@@ -3,9 +3,19 @@
   <head>
     <meta charset="utf-8">
     <title>Leaflet Map</title>
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
         crossorigin=""/>
+    <link rel="stylesheet" href="https://ptma.github.io/Leaflet.Measure/src/leaflet.measure.css"/>
+    <link rel="stylesheet" href="https://ptma.github.io/Leaflet.Legend/src/leaflet.legend.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+    <script src="https://ptma.github.io/Leaflet.Measure/src/leaflet.measure.js"></script>
+    <!-- <script src="https://ptma.github.io/Leaflet.Legend/src/leaflet.legend.js"></script> -->
+    <script src="leaflet.legend.js"></script>
+
     <style type="text/css">
       body{
         margin: 0;
@@ -16,12 +26,11 @@
         height: 100vh;
       }
     </style>
+
   </head>
   <body>
     <div id="map"></div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin=""></script>
+    <!-- <script src="https://ljagis.github.io/leaflet-measure/leaflet-measure.js"></script> -->
     <script>
     // <script type="module">
         // import geojson from './testapi.geojson';
@@ -31,10 +40,37 @@
             center: [47.5, -121],
             zoom: 8.5
         });
+
+        map.on('contextmenu',(e) => {
+            // 3 decimal places for latitude ~110m resolution
+            // longitude resolution is dependent on latitude. at 45°, 3 decimal places is ~79m
+            let lltext = `(${e.latlng.lat.toFixed(3)}, ${e.latlng.lng.toFixed(3)})`;
+            L.popup()
+            .setLatLng(e.latlng)
+            .setContent(lltext)
+            .openOn(map);
+        });
+
+        L.control.scale().addTo(map);
+        L.control.measure().addTo(map);
+
+        let legendControl = L.control.Legend({
+            position: "bottomleft",
+            collapsed: false,
+            legends: [],
+        }).addTo(map);
         /*
-        L.marker([47.5, -122]).addTo(map);
-        L.marker([40, -82]).addTo(map);
+        let legendControl = L.control.Legend({
+            position: "bottomleft",
+            collapsed: false,
+            legends: [
+                {label: "Wilderness", layers: [], type: "polygon", sides: 4, fillColor: "#009f00", color: "#004f00", weight: 3, opacity: 1, fillOpacity: 0.4},
+            ]
+        }).addTo(map);
         */
+
+
+
 
         function jsonToTable(jdata) {
             let table = '<table><tbody>'
@@ -47,8 +83,7 @@
                 table += '</tr>';
             });
 
-            table += '</tbody></table>';
-            return table;
+            table += '</tbody></table>'; return table;
         }
 
         function eachFeature(feature, layer) {
@@ -56,7 +91,11 @@
             layer.bindPopup(mytable);
         }
 
-        async function addGeojsonFileToControl(fileName, layerName, pathStyle, pointStyle, control, onByDefault) {
+/*
+            {label: "Wilderness", layers: [], type: "polygon", sides: 4, fillColor: "#009f00", color: "#004f00", weight: 3, opacity: 1, fillOpacity: 0.4},
+*/
+
+        async function addGeojsonFileToControls(fileName, layerName, pathStyle, pointStyle, layerControl, onByDefault, legendControl) {
             let mygeo = await fetch(fileName).then(resp => resp.json());
             let mylayer = L.geoJson(mygeo, {
                 onEachFeature: eachFeature, // popup
@@ -64,11 +103,19 @@
                 pointToLayer: pointStyle // points
             });
 
-            control.addOverlay(mylayer, layerName);
+            if (layerControl) {
+                layerControl.addOverlay(mylayer, layerName);
+            }
             if (onByDefault) {
                 mylayer.addTo(map);
             }
+            if (legendControl && pathStyle) {
+                let legend = {label: layerName, layers: [mylayer], type: "polygon", sides: 4, fillColor: pathStyle['fillColor'], color: pathStyle['color'], weight: pathStyle['weight'], opacity: pathStyle['opacity'], fillOpacity: pathStyle['fillOpacity']}
+                legendControl.addLegend(legend);
+            } 
         }
+
+
 
 
 
@@ -92,13 +139,13 @@
             'color': '#ff0000',
             'weight': 4
         };
-        addGeojsonFileToControl('uniqueID-geojson/motorized.geojson', 'motorized', motorStyle, undefined, layerControl, true);
+        addGeojsonFileToControls('uniqueID-geojson/motorized.geojson', 'motorized', motorStyle, undefined, layerControl, true, legendControl);
 
         let nonmotorStyle = {
             'color': '#0000ff',
             'weight': 4
         };
-        addGeojsonFileToControl('uniqueID-geojson/nonmotorized.geojson', 'nonmotorized', nonmotorStyle, undefined, layerControl, true);
+        addGeojsonFileToControls('uniqueID-geojson/nonmotorized.geojson', 'nonmotorized', nonmotorStyle, undefined, layerControl, true, legendControl);
 
 
 
@@ -112,8 +159,9 @@
             'opacity': 1,
             'fillOpacity': 0.4
         };
-        addGeojsonFileToControl('uniqueID-geojson/wa-wilderness.geojson', 'wilderness', wildStyle, undefined, layerControl, true);
+        addGeojsonFileToControls('uniqueID-geojson/wa-wilderness.geojson', 'wilderness', wildStyle, undefined, layerControl, true, legendControl);
 
+        /*
         let grwBoundaryStyle = {
             'fillColor': '#ff0000',
             'color': '#7f0000',
@@ -121,7 +169,8 @@
             'opacity': 1,
             'fillOpacity': 0.4
         };
-        addGeojsonFileToControl('uniqueID-geojson/greenriver-watershed-boundary.geojson', 'gr-watershed-boundary', grwBoundaryStyle, undefined, layerControl, true);
+        addGeojsonFileToLayerControl('uniqueID-geojson/greenriver-watershed-boundary.geojson', 'gr-watershed-boundary', grwBoundaryStyle, undefined, layerControl, true);
+        */
 
         let wshedAreaStyle = function(feature) {
             let fc = '#000000';
@@ -148,10 +197,51 @@
                 'fillOpacity': 0.4
             };
         }
-        addGeojsonFileToControl('uniqueID-geojson/grw-areas.geojson', 'green-watershed-areas', wshedAreaStyle, undefined, layerControl, true);
+        /*
+        addGeojsonFileToControls('uniqueID-geojson/grw-areas.geojson', 'green-watershed-areas', wshedAreaStyle, undefined, layerControl, true, legendControl);
+        */
 
+        let crwStyle = {
+            'fillColor': '#ff0000',
+            'color': '#7f0000',
+            'weight': 4,
+            'opacity': 1,
+            'fillOpacity': 0.4
+        };
         // https://www.openstreetmap.org/way/577601007
-        addGeojsonFileToControl('uniqueID-geojson/crw-area.geojson', 'cedar-watershed-areas', wshedAreaStyle, undefined, layerControl, true);
+        addGeojsonFileToControls('uniqueID-geojson/crw-area.geojson', 'cedar-watershed-areas', crwStyle, undefined, layerControl, true, legendControl);
+
+        goodStyle = {
+            'fillColor': '#00ff00',
+            'color': '#007f00',
+            'weight': 4,
+            'opacity': 1,
+            'fillOpacity': 0.4
+        };
+        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/federal.geojson', 'grw-federal', goodStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/state.geojson', 'grw-state', goodStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/local.geojson', 'grw-local', goodStyle, undefined, layerControl, true, legendControl);
+
+        maybeStyle = {
+            'fillColor': '#ffff00',
+            'color': '#7f7f00',
+            'weight': 4,
+            'opacity': 1,
+            'fillOpacity': 0.4
+        };
+        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/corp.geojson', 'grw-corp', maybeStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/none.geojson', 'grw-none', maybeStyle, undefined, layerControl, true, legendControl);
+
+        badStyle = {
+            'fillColor': '#ff9f00',
+            'color': '#7f4f00',
+            'weight': 4,
+            'opacity': 1,
+            'fillOpacity': 0.4
+        };
+        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/tribe.geojson', 'grw-tribe', badStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/indiv.geojson', 'grw-indiv', badStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/watershed.geojson', 'grw-watershed', badStyle, undefined, layerControl, true, legendControl);
 
 
         //
@@ -164,7 +254,7 @@
             });
             return L.marker(latlng, {icon: parkIcon});
         };
-        addGeojsonFileToControl('uniqueID-geojson/snoparks.geojson', 'snoparks', undefined, parkStyle, layerControl, true);
+        addGeojsonFileToControls('uniqueID-geojson/snoparks.geojson', 'snoparks', undefined, parkStyle, layerControl, true, legendControl);
 
         let grGateStyle = function(feature, latlng) {
             var gateIcon = L.icon({
@@ -173,7 +263,7 @@
             });
             return L.marker(latlng, {icon: gateIcon});
         };
-        addGeojsonFileToControl('uniqueID-geojson/greenriver-watershed-gates.geojson', 'gr-watershed-gates', undefined, grGateStyle, layerControl, true);
+        addGeojsonFileToControls('uniqueID-geojson/greenriver-watershed-gates.geojson', 'gr-watershed-gates', undefined, grGateStyle, layerControl, true, legendControl);
 
 
         map.createPane("summitMarker");
@@ -192,7 +282,7 @@
             };
             return L.circleMarker(latlng, circleOptions);
         };
-        addGeojsonFileToControl('uniqueID-geojson/W7W-4pts.geojson', 'summits-4', undefined, fourStyle, layerControl, true);
+        addGeojsonFileToControls('uniqueID-geojson/W7W-4pts.geojson', 'summits-4', undefined, fourStyle, layerControl, true, legendControl);
 
         let sixStyle = function(feature, latlng) {
             var circleOptions = {
@@ -206,8 +296,7 @@
             };
             return L.circleMarker(latlng, circleOptions);
         };
-        addGeojsonFileToControl('uniqueID-geojson/W7W-6pts.geojson', 'summits-6', undefined, sixStyle, layerControl, true);
-
+        addGeojsonFileToControls('uniqueID-geojson/W7W-6pts.geojson', 'summits-6', undefined, sixStyle, layerControl, true, legendControl);
 
     </script>
   </body>
