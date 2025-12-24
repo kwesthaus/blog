@@ -9,12 +9,20 @@
         crossorigin=""/>
     <link rel="stylesheet" href="https://ptma.github.io/Leaflet.Measure/src/leaflet.measure.css"/>
     <link rel="stylesheet" href="https://ptma.github.io/Leaflet.Legend/src/leaflet.legend.css"/>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>
     <script src="https://ptma.github.io/Leaflet.Measure/src/leaflet.measure.js"></script>
     <!-- <script src="https://ptma.github.io/Leaflet.Legend/src/leaflet.legend.js"></script> -->
     <script src="leaflet.legend.js"></script>
+
+    <link href="https://unpkg.com/maplibre-gl@2.2.1/dist/maplibre-gl.css" rel="stylesheet"/>
+    <script src="https://unpkg.com/maplibre-gl@2.2.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.20/leaflet-maplibre-gl.js"></script>
+
+    <script src="https://unpkg.com/esri-leaflet@3.0.19/dist/esri-leaflet.js"></script>
+    <script src="https://unpkg.com/esri-leaflet-vector@4.3.2/dist/esri-leaflet-vector.js"></script>
 
     <style type="text/css">
       body{
@@ -119,11 +127,57 @@
 
 
 
+        maplibregl.setRTLTextPlugin('https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js');
+        // USFS_FSTopo: L.maplibreGL({style: 'https://tiles.arcgis.com/tiles/gGHDlz6USftL5Pau/arcgis/rest/services/FSBasemap_20240617/VectorTileServer/resources/styles/root.json'}),
+
+
+        /*
+        let gl = L.maplibreGL();
+        console.log(gl);
+
+        gl.getMaplibreMap().addSource('esri', {
+            type: "vector",
+            minzoom: 2,
+            maxzoom: 19,
+            bounds: {0: -180, 1: 4.40482, 2: -28.4482, 3: 73.3321},
+            scheme: "xyz",
+            url: "https://tiles.arcgis.com/tiles/gGHDlz6USftL5Pau/arcgis/rest/services/FSBasemap_20240617/VectorTileServer/",
+        });
+        gl.getMaplibreMap().addLayer({
+            
+        });
+        */
 
         const baseMaps = {
-            StreetView: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',   {attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}),
-            TopoView: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',   {attribution: 'Kartendaten: © OpenStreetMap-Mitwirkende, SRTM | Kartendarstellung: © OpenTopoMap (CC-BY-SA)'}),
-            USGS_USTopo: L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', {maxZoom: 20, attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'})
+            StreetView: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',   {maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}),
+            TopoView: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',   {maxZoom: 17, attribution: 'Kartendaten: © OpenStreetMap-Mitwirkende, SRTM | Kartendarstellung: © OpenTopoMap (CC-BY-SA)'}),
+            USGS_USTopo: L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', {maxZoom: 20, attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'}),
+            USGS_USImageryTopo: L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}', {maxZoom: 20, attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'}),
+            Stadia_AlidadeSatellite: L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}', {minZoom: 0, maxZoom: 20, attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', ext: 'jpg'}),
+            Esri_WorldImagery: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'}),
+            Esri_WorldTopoMap: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'}),
+            // USFS_FSTopo: L.maplibreGL('https://tiles.arcgis.com/tiles/gGHDlz6USftL5Pau/arcgis/rest/services/FSBasemap_20240617/VectorTileServer/tile/{z}/{x}/{y}.pbf'),
+            // USFS_FSTopo: L.maplibreGL({style: 'https://tiles.arcgis.com/tiles/gGHDlz6USftL5Pau/arcgis/rest/services/FSBasemap_20240617/VectorTileServer/resources/styles/root.json'}),
+            // USFS_FSTopo: L.maplibreGL({style: 'https://tiles.arcgis.com/tiles/gGHDlz6USftL5Pau/arcgis/rest/services/FSBasemap_20240617/VectorTileServer'}),
+            /*
+            USFS_FSTopo: L.maplibreGL({style: 'https://tiles.arcgis.com/tiles/gGHDlz6USftL5Pau/arcgis/rest/services/FSBasemap_20240617/VectorTileServer/resources/styles/root.json?f=pjson', transformRequest: (url, resourceType) => {
+                if(url.startsWith('../')) {
+                    res = url.replace('../', 'https://tiles.arcgis.com/tiles/gGHDlz6USftL5Pau/arcgis/rest/services/FSBasemap_20240617/VectorTileServer/resources/');
+                    console.log(url);
+                    console.log(res);
+                    return {
+                        url: res
+                    };
+                }
+            }}),
+            */
+            // USFS_FSTopo: L.maplibreGL({style: 'root.json'}),
+
+            // VectorTileServer
+            USFS_FSTopo: L.esri.Vector.vectorTileLayer('2e1593463c30495e9c802098527e3d1b'),
+            // WADNR_RAT: L.esri.Vector.vectorTileLayer('c9130b8beb7345e68eee98522e0c0acc'),
+
+
         };
 
         var layerControl = L.control.layers(baseMaps, undefined, {collapsed: false}).addTo(map);
@@ -139,13 +193,67 @@
             'color': '#ff0000',
             'weight': 4
         };
-        addGeojsonFileToControls('uniqueID-geojson/motorized.geojson', 'motorized', motorStyle, undefined, layerControl, true, legendControl);
+        // addGeojsonFileToControls('uniqueID-geojson/motorized.geojson', 'motorized', motorStyle, undefined, layerControl, true, legendControl);
+        let motorlayer = L.esri.featureLayer({
+            url: "https://services5.arcgis.com/4LKAHwqnBooVDUlX/arcgis/rest/services/PARKS__Winter_Rec_Motorized_Trails/FeatureServer/0",
+            style: motorStyle,
+        });
+        /*
+        let mylayer = L.geoJson(mygeo, {
+            onEachFeature: eachFeature, // popup
+            style: pathStyle, // lines + polygons
+            pointToLayer: pointStyle // points
+        });
+        */
+        layerControl.addOverlay(motorlayer, "motorized");
 
         let nonmotorStyle = {
             'color': '#0000ff',
             'weight': 4
         };
         addGeojsonFileToControls('uniqueID-geojson/nonmotorized.geojson', 'nonmotorized', nonmotorStyle, undefined, layerControl, true, legendControl);
+
+        // no styling
+        /*
+        let mvumlayer = L.esri.featureLayer({
+            url: "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MVUM_02/MapServer/1",
+        });
+        */
+        // use server-provided styling
+        let mvumlayer = L.esri.dynamicMapLayer({
+            url: "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MVUM_02/MapServer/",
+        });
+        layerControl.addOverlay(mvumlayer, "MVUM");
+
+
+
+        // no styling
+        /*
+        let dnrRoadLayer = L.esri.featureLayer({
+            url: "https://gis.dnr.wa.gov/site3/rest/services/Public_Transportation/WADNR_PUBLIC_ENG_Roads/MapServer/5",
+        });
+        */
+
+        // let dnrRoadLayer = L.esri.Vector.vectorTileLayer('c9130b8beb7345e68eee98522e0c0acc');
+        // let dnrRoadLayer = L.esri.Vector.vectorTileLayer('https://tiles.arcgis.com/tiles/4x406oNViizbGo13/arcgis/rest/services/RoadsAndTopoPublic/VectorTileServer/');
+
+        // use server-provided styling
+        // by default it is blank?
+        // under the hood example URL: https://gis.dnr.wa.gov/site3/rest/services/Public_Transportation/WADNR_PUBLIC_ENG_Roads/MapServer/export?bbox=-13562341.361495519%2C5994659.934921771%2C-13556962.10562995%2C5988263.111117157&size=1126%2C1339&dpi=96&format=png32&transparent=true&bboxSR=3857&imageSR=3857&f=json
+        // if I add layers=include:0,1,2,3,4,5,6,7,8 then things show up, so I think just layers are disabled by default?
+        let dnrRoadLayer = L.esri.dynamicMapLayer({
+            url: "https://gis.dnr.wa.gov/site3/rest/services/Public_Transportation/WADNR_PUBLIC_ENG_Roads/MapServer/",
+            layers: [0],
+        });
+
+        // invalid
+        /*
+        let dnrRoadLayer = L.esri.tiledMapLayer({
+            url: "https://gis.dnr.wa.gov/site3/rest/services/Public_Transportation/WADNR_PUBLIC_ENG_Roads/MapServer/",
+        });
+        */
+
+        layerControl.addOverlay(dnrRoadLayer, "DNR Road");
 
 
 
