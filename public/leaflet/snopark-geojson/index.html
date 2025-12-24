@@ -26,6 +26,9 @@
     <script src="https://unpkg.com/esri-leaflet@3.0.19/dist/esri-leaflet.js"></script>
     <script src="https://unpkg.com/esri-leaflet-vector@4.3.2/dist/esri-leaflet-vector.js"></script>
 
+    <script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script>
+
+
     <style type="text/css">
       body{
         margin: 0;
@@ -34,6 +37,40 @@
       #map {
         width: 100vw;
         height: 100vh;
+      }
+
+      /* leaflet-marker-icon */
+      .summitcircle {
+          color: #fff;
+          border-radius: 14px;
+          border: 2px solid #fff;
+          text-align: center;
+          line-height: 14px;
+          font-size: 10px;
+      }
+
+      .points-1.summitcircle {
+          background: #4d7a20;
+      }
+
+      .points-2.summitcircle {
+          background: #6da536;
+      }
+
+      .points-4.summitcircle {
+          background: #aea727;
+      }
+
+      .points-6.summitcircle {
+          background: #efa818;
+      }
+
+      .points-8.summitcircle {
+          background: #dc5d04;
+      }
+
+      .points-10.summitcircle {
+          background: #c8101e;
       }
     </style>
 
@@ -380,33 +417,64 @@
         // see https://github.com/Leaflet/Leaflet/blob/v1.0.0/dist/leaflet.css#L87 to compare values
         map.getPane("summitMarker").style.zIndex = 600;
 
+        /*
+        // sotl.as uses a tiled vector layer called "summits" that is hosted/served via maptiler
+        // fields: act (num), alt (num), code (str), name (str), points (num)
+
         let fourStyle = function(feature, latlng) {
-            var circleOptions = {
+            var markerOptions = {
                 pane: "summitMarker",
-                radius: 6,
-                fillColor: '#aea727',
-                color: '#ffffff',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 1
+                icon: L.divIcon({
+                    iconSize: L.point(14, 14),
+                    html: "4",
+                    className: "summitcircle points-4",
+                }),
             };
-            return L.circleMarker(latlng, circleOptions);
+            return L.marker(latlng, markerOptions);
         };
         addGeojsonFileToControls('../shared/uniqueID-geojson/W7W-4pts.geojson', 'summits-4', undefined, fourStyle, layerControl, true, legendControl);
 
         let sixStyle = function(feature, latlng) {
-            var circleOptions = {
+            var markerOptions = {
                 pane: "summitMarker",
-                radius: 6,
-                fillColor: '#efa818',
-                color: '#ffffff',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 1
+                icon: L.divIcon({
+                    iconSize: L.point(14, 14),
+                    html: "6",
+                    className: "six",
+                }),
             };
-            return L.circleMarker(latlng, circleOptions);
+            return L.marker(latlng, markerOptions);
         };
         addGeojsonFileToControls('../shared/uniqueID-geojson/W7W-6pts.geojson', 'summits-6', undefined, sixStyle, layerControl, true, legendControl);
+        */
+
+
+        let summitStyle = function(feature, latlng) {
+            let parts = feature.properties.ValidFrom.split('/');
+            let vStart = new Date(); vStart.setFullYear(parts[2]); vStart.setMonth(parts[1]-1); vStart.setDate(parts[0]);
+            parts = feature.properties.ValidTo.split('/');
+            let vEnd = new Date(); vEnd.setFullYear(parts[2]); vEnd.setMonth(parts[1]-1); vEnd.setDate(parts[0]);
+
+            let today = new Date();
+            let className = '';
+            if (vStart < today && today < vEnd) {
+                className = `summitcircle points-${feature.properties.Points}`;
+            } else {
+                return;
+            }
+
+            var markerOptions = {
+                pane: "summitMarker",
+                icon: L.divIcon({
+                    iconSize: L.point(14, 14),
+                    html: feature.properties.ActivationCount,
+                    className: className,
+                }),
+            };
+            return L.marker(latlng, markerOptions);
+        };
+        let summitLayer = L.geoJson(null, {pointToLayer: summitStyle, onEachFeature: eachFeature});
+        omnivore.csv('../shared/summitslist-W7W_2025-jan-06.csv', {latfield: 'Latitude', lonfield: 'Longitude', delimiter: ','}, summitLayer).addTo(map);
 
     </script>
   </body>
