@@ -15,11 +15,13 @@
         crossorigin=""></script>
     <script src="https://ptma.github.io/Leaflet.Measure/src/leaflet.measure.js"></script>
     <!-- <script src="https://ptma.github.io/Leaflet.Legend/src/leaflet.legend.js"></script> -->
-    <script src="leaflet.legend.js"></script>
+    <script src="../shared/leaflet.legend.js"></script>
 
+    <!--
     <link href="https://unpkg.com/maplibre-gl@2.2.1/dist/maplibre-gl.css" rel="stylesheet"/>
     <script src="https://unpkg.com/maplibre-gl@2.2.1/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.20/leaflet-maplibre-gl.js"></script>
+    -->
 
     <script src="https://unpkg.com/esri-leaflet@3.0.19/dist/esri-leaflet.js"></script>
     <script src="https://unpkg.com/esri-leaflet-vector@4.3.2/dist/esri-leaflet-vector.js"></script>
@@ -127,7 +129,7 @@
 
 
 
-        maplibregl.setRTLTextPlugin('https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js');
+        // maplibregl.setRTLTextPlugin('https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js');
         // USFS_FSTopo: L.maplibreGL({style: 'https://tiles.arcgis.com/tiles/gGHDlz6USftL5Pau/arcgis/rest/services/FSBasemap_20240617/VectorTileServer/resources/styles/root.json'}),
 
 
@@ -211,7 +213,7 @@
             'color': '#0000ff',
             'weight': 4
         };
-        addGeojsonFileToControls('uniqueID-geojson/nonmotorized.geojson', 'nonmotorized', nonmotorStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/uniqueID-geojson/nonmotorized.geojson', 'nonmotorized', nonmotorStyle, undefined, layerControl, true, legendControl);
 
         // no styling
         /*
@@ -267,7 +269,7 @@
             'opacity': 1,
             'fillOpacity': 0.4
         };
-        addGeojsonFileToControls('uniqueID-geojson/wa-wilderness.geojson', 'wilderness', wildStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/uniqueID-geojson/wa-wilderness.geojson', 'wilderness', wildStyle, undefined, layerControl, true, legendControl);
 
         /*
         let grwBoundaryStyle = {
@@ -317,7 +319,7 @@
             'fillOpacity': 0.4
         };
         // https://www.openstreetmap.org/way/577601007
-        addGeojsonFileToControls('uniqueID-geojson/crw-area.geojson', 'cedar-watershed-areas', crwStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/uniqueID-geojson/crw-area.geojson', 'cedar-watershed-areas', crwStyle, undefined, layerControl, true, legendControl);
 
         goodStyle = {
             'fillColor': '#00ff00',
@@ -326,9 +328,9 @@
             'opacity': 1,
             'fillOpacity': 0.4
         };
-        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/federal.geojson', 'grw-federal', goodStyle, undefined, layerControl, true, legendControl);
-        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/state.geojson', 'grw-state', goodStyle, undefined, layerControl, true, legendControl);
-        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/local.geojson', 'grw-local', goodStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/federal.geojson', 'grw-federal', goodStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/state.geojson', 'grw-state', goodStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/local.geojson', 'grw-local', goodStyle, undefined, layerControl, true, legendControl);
 
         maybeStyle = {
             'fillColor': '#ffff00',
@@ -337,8 +339,8 @@
             'opacity': 1,
             'fillOpacity': 0.4
         };
-        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/corp.geojson', 'grw-corp', maybeStyle, undefined, layerControl, true, legendControl);
-        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/none.geojson', 'grw-none', maybeStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/corp.geojson', 'grw-corp', maybeStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/none.geojson', 'grw-none', maybeStyle, undefined, layerControl, true, legendControl);
 
         badStyle = {
             'fillColor': '#ff9f00',
@@ -347,9 +349,9 @@
             'opacity': 1,
             'fillOpacity': 0.4
         };
-        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/tribe.geojson', 'grw-tribe', badStyle, undefined, layerControl, true, legendControl);
-        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/indiv.geojson', 'grw-indiv', badStyle, undefined, layerControl, true, legendControl);
-        addGeojsonFileToControls('nonuniqueID-geojson/parcels/grw-access/watershed.geojson', 'grw-watershed', badStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/tribe.geojson', 'grw-tribe', badStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/indiv.geojson', 'grw-indiv', badStyle, undefined, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/watershed.geojson', 'grw-watershed', badStyle, undefined, layerControl, true, legendControl);
 
 
         //
@@ -357,21 +359,21 @@
         //
         let parkStyle = function(feature, latlng) {
             var parkIcon = L.icon({
-                iconUrl: 'icons/Parking.svg',
+                iconUrl: '../shared/icons/Parking.svg',
                 iconSize: [16, 16]
             });
             return L.marker(latlng, {icon: parkIcon});
         };
-        addGeojsonFileToControls('uniqueID-geojson/snoparks.geojson', 'snoparks', undefined, parkStyle, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/uniqueID-geojson/snoparks.geojson', 'snoparks', undefined, parkStyle, layerControl, true, legendControl);
 
         let grGateStyle = function(feature, latlng) {
             var gateIcon = L.icon({
-                iconUrl: 'icons/Red_X.svg',
+                iconUrl: '../shared/icons/Red_X.svg',
                 iconSize: [16, 16]
             });
             return L.marker(latlng, {icon: gateIcon});
         };
-        addGeojsonFileToControls('uniqueID-geojson/greenriver-watershed-gates.geojson', 'gr-watershed-gates', undefined, grGateStyle, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/uniqueID-geojson/greenriver-watershed-gates.geojson', 'gr-watershed-gates', undefined, grGateStyle, layerControl, true, legendControl);
 
 
         map.createPane("summitMarker");
@@ -390,7 +392,7 @@
             };
             return L.circleMarker(latlng, circleOptions);
         };
-        addGeojsonFileToControls('uniqueID-geojson/W7W-4pts.geojson', 'summits-4', undefined, fourStyle, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/uniqueID-geojson/W7W-4pts.geojson', 'summits-4', undefined, fourStyle, layerControl, true, legendControl);
 
         let sixStyle = function(feature, latlng) {
             var circleOptions = {
@@ -404,7 +406,7 @@
             };
             return L.circleMarker(latlng, circleOptions);
         };
-        addGeojsonFileToControls('uniqueID-geojson/W7W-6pts.geojson', 'summits-6', undefined, sixStyle, layerControl, true, legendControl);
+        addGeojsonFileToControls('../shared/uniqueID-geojson/W7W-6pts.geojson', 'summits-6', undefined, sixStyle, layerControl, true, legendControl);
 
     </script>
   </body>
