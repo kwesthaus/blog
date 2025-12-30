@@ -6,6 +6,12 @@ L.Control.SotaFilter = L.Control.extend({
     },
     initialize: function(options) {
         L.Util.setOptions(this, options);
+        this._map = null;
+        this._view = {
+            container: null,
+            presets: null,
+            custom: null,
+        };
         this._model = {
             selectedCategory: null,
             customText: null,
@@ -17,20 +23,20 @@ L.Control.SotaFilter = L.Control.extend({
     },
     onAdd: function(map) {
         this._map = map;
-        this._container || this._initLayout();
-        return this._container;
+        this._view.container || this._initLayout();
+        return this._view.container;
     },
     onRemove: function(map) {
     },
 
     _initLayout: function() {
         this._buildContainer();
-        L.DomEvent.disableClickPropagation(this._container);
-        L.DomEvent.disableScrollPropagation(this._container);
+        L.DomEvent.disableClickPropagation(this._view.container);
+        L.DomEvent.disableScrollPropagation(this._view.container);
         /*
         if (this.options.collapsible) {
             L.DomEvent.on(
-                this._container,
+                this._view.container,
                 {mouseenter: this._expand, mouseleave: this._collapse},
                 this
             );
@@ -40,50 +46,50 @@ L.Control.SotaFilter = L.Control.extend({
         */
     },
     _buildContainer: function() {
-        this._container = L.DomUtil.create("div", "leaflet-control leaflet-bar leaflet-control-sotafilter");
+        this._view.container = L.DomUtil.create("div", "leaflet-control leaflet-bar leaflet-control-sotafilter");
         if (this.options.title) {
-            var title = L.DomUtil.create("h3", "", this._container);
+            var title = L.DomUtil.create("h3", "", this._view.container);
             title.innerText = this.options.title;
         }
-        let presetsInput = L.DomUtil.create("input", null, this._container);
+        let presetsInput = L.DomUtil.create("input", null, this._view.container);
         presetsInput.type = "radio";
         presetsInput.name = "filter-category";
         presetsInput.id = "preset-radio";
         presetsInput.value = "presets";
         L.DomEvent.on(presetsInput, "change", this._handleCategoryRadio, this);
 
-        let presetsLabel = L.DomUtil.create("label", null, this._container);
+        let presetsLabel = L.DomUtil.create("label", null, this._view.container);
         presetsLabel.for = "presets";
         presetsLabel.innerText = "Presets";
 
-        L.DomUtil.create("br", null, this._container);
+        L.DomUtil.create("br", null, this._view.container);
 
-        let customInput = L.DomUtil.create("input", null, this._container);
+        let customInput = L.DomUtil.create("input", null, this._view.container);
         customInput.type = "radio";
         customInput.name = "filter-category";
         customInput.id = "custom-radio";
         customInput.value = "custom";
         L.DomEvent.on(customInput, "change", this._handleCategoryRadio, this);
 
-        let customLabel = L.DomUtil.create("label", null, this._container);
+        let customLabel = L.DomUtil.create("label", null, this._view.container);
         customLabel.for = "custom";
         customLabel.innerText = "Custom";
 
-        L.DomUtil.create("br", null, this._container);
+        L.DomUtil.create("br", null, this._view.container);
 
-        this._presets = L.DomUtil.create("div", "filter-category", this._container);
-        this._presets.id = "presets-div";
-        this._presets.innerText = "Presets";
+        this._view.presets = L.DomUtil.create("div", "filter-category", this._view.container);
+        this._view.presets.id = "presets-div";
+        this._view.presets.innerText = "Presets";
         this._buildPresets();
-        this._custom = L.DomUtil.create("div", "filter-category", this._container);
-        this._custom.id = "custom-div";
-        this._custom.innerText = "Custom";
+        this._view.custom = L.DomUtil.create("div", "filter-category", this._view.container);
+        this._view.custom.id = "custom-div";
+        this._view.custom.innerText = "Custom";
         this._buildCustom();
 
-        let clearButton = L.DomUtil.create("button", "", this._container);
+        let clearButton = L.DomUtil.create("button", "", this._view.container);
         clearButton.id = "filterclear";
         clearButton.innerText = "Clear";
-        let updateButton = L.DomUtil.create("button", "", this._container);
+        let updateButton = L.DomUtil.create("button", "", this._view.container);
         updateButton.id = "filterupdate";
         updateButton.innerText = "Apply";
         L.DomEvent.on(updateButton, "click", this._applyFilters, this);
@@ -108,7 +114,7 @@ L.Control.SotaFilter = L.Control.extend({
         console.log(this._model);
     },
     _buildPresets: function() {
-        let filterActivations = L.DomUtil.create("div", "filter-criterion", this._presets);
+        let filterActivations = L.DomUtil.create("div", "filter-criterion", this._view.presets);
         let activMinLabel = L.DomUtil.create("label", "", filterActivations);
         activMinLabel.for = "activation-min";
         activMinLabel.innerText = "Activations";
@@ -130,7 +136,7 @@ L.Control.SotaFilter = L.Control.extend({
 
 
 
-        let filterPoints = L.DomUtil.create("div", "filter-criterion", this._presets);
+        let filterPoints = L.DomUtil.create("div", "filter-criterion", this._view.presets);
         let pointMinLabel = L.DomUtil.create("label", "", filterPoints);
         pointMinLabel.for = "point-min";
         pointMinLabel.innerText = "Points";
@@ -153,7 +159,7 @@ L.Control.SotaFilter = L.Control.extend({
         L.DomEvent.on(pointMaxInput, "change", function(e){this._model.pointMax = e.target.value;}, this);
     },
     _buildCustom: function() {
-        let filterCustom = L.DomUtil.create("div", "filter-criterion", this._custom);
+        let filterCustom = L.DomUtil.create("div", "filter-criterion", this._view.custom);
         let customInput = L.DomUtil.create("input", "", filterCustom);
         customInput.type = "text";
         customInput.id = "customfilter";
