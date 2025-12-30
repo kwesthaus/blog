@@ -85,7 +85,8 @@
         const map = L.map('map', {
             // washington state
             center: [47.5, -121],
-            zoom: 8.5
+            zoom: 8.5,
+            // attributionControl: false,
         });
 
         map.on('contextmenu',(e) => {
@@ -103,7 +104,7 @@
 
         let legendControl = L.control.Legend({
             position: "bottomleft",
-            collapsed: false,
+            collapsed: true,
             legends: [],
         }).addTo(map);
         /*
@@ -219,7 +220,7 @@
 
         };
 
-        var layerControl = L.control.layers(baseMaps, undefined, {collapsed: false}).addTo(map);
+        var layerControl = L.control.layers(baseMaps, undefined, {collapsed: true}).addTo(map);
         // default
         baseMaps.TopoView.addTo(map);
 
