@@ -1,0 +1,11 @@
+.leaflet-control-sotafilter {
+    background-color: white;
+}
+
+.filter-category {
+    border: 2px solid #000;
+}
+
+.filter-criterion {
+    border: 2px solid #00f;
+}
