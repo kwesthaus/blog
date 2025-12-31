@@ -7,6 +7,8 @@ L.Control.SotaFilter = L.Control.extend({
     initialize: function(options) {
         L.Util.setOptions(this, options);
         this._map = null;
+        this._layer = null;
+        this._hydrateFunc = null;
         this._view = {
             container: null,
             presets: null,
@@ -16,7 +18,7 @@ L.Control.SotaFilter = L.Control.extend({
             selectedCategory: null,
             customText: null,
             activMin: 0,
-            activMax: null,
+            activMax: NaN,
             pointMin: 0,
             pointMax: 10,
         };
@@ -28,6 +30,11 @@ L.Control.SotaFilter = L.Control.extend({
     },
     onRemove: function(map) {
     },
+    setLayer: function (layer, hydrateFunc) {
+        this._layer = layer;
+        this._hydrateFunc = hydrateFunc;
+    },
+
 
     _initLayout: function() {
         this._buildContainer();
@@ -106,12 +113,37 @@ L.Control.SotaFilter = L.Control.extend({
         selectedDiv.style.display = "block";
     },
     _applyFilters: function(e) {
+        let filterFunc = null;
         if (this._model.selectedCategory == "presets") {
+            filterFunc = this._buildPresetsFilter();
             console.log("applying presets");
         } else {
+            filterFunc = this._buildCustomFilter();
             console.log("applying custom");
         }
+        this._layer.options.filter = filterFunc;
+        this._layer.clearLayers();
+        this._hydrateFunc(this._layer);
+    },
+    _buildPresetsFilter: function() {
         console.log(this._model);
+        let pointMin = this._model.pointMin;
+        let pointMax = this._model.pointMax;
+        let activMin = this._model.activMin;
+        let activMax = this._model.activMax;
+        return function(feature) {
+            if ((!isNaN(pointMin) && feature.properties.Points < pointMin) || (!isNaN(pointMax) && feature.properties.Points > pointMax)) {
+                return false;
+            }
+            if ((!isNaN(activMin) && feature.properties.ActivationCount < activMin) || (!isNaN(activMax) && feature.properties.ActivationCount > activMax)) {
+                return false;
+            }
+            return true;
+        };
+    },
+    _buildCustomFilter: function() {
+        let func = new Function("feature", this._model.customText);
+        return func;
     },
     _buildPresets: function() {
         let filterActivations = L.DomUtil.create("div", "filter-criterion", this._view.presets);
@@ -122,7 +154,7 @@ L.Control.SotaFilter = L.Control.extend({
         activMinInput.type = "number";
         activMinInput.id = "activation-min";
         activMinInput.min = 0;
-        L.DomEvent.on(activMinInput, "change", function(e){this._model.activMin = e.target.value;}, this);
+        L.DomEvent.on(activMinInput, "change", function(e){this._model.activMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterActivations);
         let activMaxLabel = L.DomUtil.create("label", "", filterActivations);
@@ -132,7 +164,7 @@ L.Control.SotaFilter = L.Control.extend({
         activMaxInput.type = "number";
         activMaxInput.id = "activation-max";
         activMaxInput.min = 0;
-        L.DomEvent.on(activMaxInput, "change", function(e){this._model.activMax = e.target.value;}, this);
+        L.DomEvent.on(activMaxInput, "change", function(e){this._model.activMax = parseInt(e.target.value);}, this);
 
 
 
@@ -145,7 +177,7 @@ L.Control.SotaFilter = L.Control.extend({
         pointMinInput.id = "point-min";
         pointMinInput.min = 0;
         pointMinInput.max = 10;
-        L.DomEvent.on(pointMinInput, "change", function(e){this._model.pointMin = e.target.value;}, this);
+        L.DomEvent.on(pointMinInput, "change", function(e){this._model.pointMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterActivations);
         let pointMaxLabel = L.DomUtil.create("label", "", filterPoints);
@@ -156,14 +188,18 @@ L.Control.SotaFilter = L.Control.extend({
         pointMaxInput.id = "point-max";
         pointMaxInput.min = 0;
         pointMaxInput.max = 10;
-        L.DomEvent.on(pointMaxInput, "change", function(e){this._model.pointMax = e.target.value;}, this);
+        L.DomEvent.on(pointMaxInput, "change", function(e){this._model.pointMax = parseInt(e.target.value);}, this);
     },
     _buildCustom: function() {
         let filterCustom = L.DomUtil.create("div", "filter-criterion", this._view.custom);
-        let customInput = L.DomUtil.create("input", "", filterCustom);
-        customInput.type = "text";
-        customInput.id = "customfilter";
-        L.DomEvent.on(customInput, "change", function(e){this._model.customText = e.target.value;}, this);
+        let customTextLabel = L.DomUtil.create("label", "", filterCustom);
+        customTextLabel.for = "customtext";
+        customTextLabel.innerText = 'let func = Function("feature", ...);';
+        let customTextInput = L.DomUtil.create("input", "", filterCustom);
+        customTextInput.type = "text";
+        customTextInput.id = "customtext";
+        customTextInput.placeholder = 'return (feature.properties.RegionName == "WA-Central Washington" && feature.properties.ActivationCount == 0);';
+        L.DomEvent.on(customTextInput, "change", function(e){this._model.customText = e.target.value;}, this);
     },
 });
 L.control.sotaFilter = function(opts) {

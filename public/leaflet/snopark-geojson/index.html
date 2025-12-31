@@ -101,7 +101,7 @@
 
         L.control.scale().addTo(map);
         L.control.measure().addTo(map);
-        L.control.sotaFilter({title: "Summit Filter"}).addTo(map);
+        let filterControl = L.control.sotaFilter({title: "Summit Filter"}).addTo(map);
 
         let legendControl = L.control.Legend({
             position: "bottomleft",
@@ -476,7 +476,13 @@
             return L.marker(latlng, markerOptions);
         };
         let summitLayer = L.geoJson(null, {pointToLayer: summitStyle, onEachFeature: eachFeature});
-        omnivore.csv('../shared/summitslist-W7W_2025-jan-06.csv', {latfield: 'Latitude', lonfield: 'Longitude', delimiter: ','}, summitLayer).addTo(map);
+        let hydrateFunc = function(layer) {
+            console.log("hydrating");
+            omnivore.csv('../shared/summitslist-W7W_2025-jan-06.csv', {latfield: 'Latitude', lonfield: 'Longitude', delimiter: ','}, layer);
+        }
+        hydrateFunc(summitLayer);
+        summitLayer.addTo(map);
+        filterControl.setLayer(summitLayer, hydrateFunc);
 
     </script>
   </body>
