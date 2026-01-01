@@ -452,18 +452,7 @@
 
 
         let summitStyle = function(feature, latlng) {
-            let parts = feature.properties.ValidFrom.split('/');
-            let vStart = new Date(); vStart.setFullYear(parts[2]); vStart.setMonth(parts[1]-1); vStart.setDate(parts[0]);
-            parts = feature.properties.ValidTo.split('/');
-            let vEnd = new Date(); vEnd.setFullYear(parts[2]); vEnd.setMonth(parts[1]-1); vEnd.setDate(parts[0]);
-
-            let today = new Date();
-            let className = '';
-            if (vStart < today && today < vEnd) {
-                className = `summitcircle points-${feature.properties.Points}`;
-            } else {
-                return;
-            }
+            let className = `summitcircle points-${feature.properties.Points}`;
 
             var markerOptions = {
                 pane: "summitMarker",
