@@ -87,11 +87,11 @@ L.Control.SotaFilter = L.Control.extend({
         this._view.presets = L.DomUtil.create("div", "filter-category", this._view.container);
         this._view.presets.id = "presets-div";
         this._view.presets.innerText = "Presets";
-        this._buildPresets();
+        this._buildPresetsView();
         this._view.custom = L.DomUtil.create("div", "filter-category", this._view.container);
         this._view.custom.id = "custom-div";
         this._view.custom.innerText = "Custom";
-        this._buildCustom();
+        this._buildCustomView();
 
         let clearButton = L.DomUtil.create("button", "", this._view.container);
         clearButton.id = "filterclear";
@@ -145,7 +145,7 @@ L.Control.SotaFilter = L.Control.extend({
         let func = new Function("feature", this._model.customText);
         return func;
     },
-    _buildPresets: function() {
+    _buildPresetsView: function() {
         let filterActivations = L.DomUtil.create("div", "filter-criterion", this._view.presets);
         let activMinLabel = L.DomUtil.create("label", "", filterActivations);
         activMinLabel.htmlFor = "activation-min";
@@ -194,7 +194,7 @@ L.Control.SotaFilter = L.Control.extend({
         pointMaxInput.placeholder = "10";
         L.DomEvent.on(pointMaxInput, "change", function(e){this._model.pointMax = parseInt(e.target.value);}, this);
     },
-    _buildCustom: function() {
+    _buildCustomView: function() {
         let filterCustom = L.DomUtil.create("div", "filter-criterion", this._view.custom);
         let customTextLabel = L.DomUtil.create("label", "", filterCustom);
         customTextLabel.htmlFor = "customtext";
