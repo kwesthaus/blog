@@ -195,9 +195,11 @@ L.Control.SotaFilter = L.Control.extend({
         let customTextLabel = L.DomUtil.create("label", "", filterCustom);
         customTextLabel.htmlFor = "customtext";
         customTextLabel.innerText = 'let func = Function("feature", ...);';
-        let customTextInput = L.DomUtil.create("input", "", filterCustom);
-        customTextInput.type = "text";
+        L.DomUtil.create("br", "", filterCustom);
+        let customTextInput = L.DomUtil.create("textarea", "", filterCustom);
         customTextInput.id = "customtext";
+        customTextInput.cols = 50;
+        customTextInput.rows = 10;
         customTextInput.placeholder = 'return (feature.properties.RegionName == "WA-Central Washington" && feature.properties.ActivationCount == 0);';
         L.DomEvent.on(customTextInput, "change", function(e){this._model.customText = e.target.value;}, this);
     },
