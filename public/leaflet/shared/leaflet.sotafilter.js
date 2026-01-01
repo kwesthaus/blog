@@ -154,6 +154,7 @@ L.Control.SotaFilter = L.Control.extend({
         activMinInput.type = "number";
         activMinInput.id = "activation-min";
         activMinInput.min = 0;
+        activMinInput.placeholder = "0";
         L.DomEvent.on(activMinInput, "change", function(e){this._model.activMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterActivations);
@@ -164,6 +165,7 @@ L.Control.SotaFilter = L.Control.extend({
         activMaxInput.type = "number";
         activMaxInput.id = "activation-max";
         activMaxInput.min = 0;
+        activMaxInput.placeholder = "(max)";
         L.DomEvent.on(activMaxInput, "change", function(e){this._model.activMax = parseInt(e.target.value);}, this);
 
 
@@ -177,6 +179,7 @@ L.Control.SotaFilter = L.Control.extend({
         pointMinInput.id = "point-min";
         pointMinInput.min = 0;
         pointMinInput.max = 10;
+        pointMinInput.placeholder = "0";
         L.DomEvent.on(pointMinInput, "change", function(e){this._model.pointMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterPoints);
@@ -188,6 +191,7 @@ L.Control.SotaFilter = L.Control.extend({
         pointMaxInput.id = "point-max";
         pointMaxInput.min = 0;
         pointMaxInput.max = 10;
+        pointMaxInput.placeholder = "10";
         L.DomEvent.on(pointMaxInput, "change", function(e){this._model.pointMax = parseInt(e.target.value);}, this);
     },
     _buildCustom: function() {
