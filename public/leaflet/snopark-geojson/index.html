@@ -464,7 +464,9 @@
             };
             return L.marker(latlng, markerOptions);
         };
-        let summitLayer = L.geoJson(null, {pointToLayer: summitStyle, onEachFeature: eachFeature});
+        let filterFunc = filterControl._buildPresetsFilter();
+        let summitLayer = L.geoJson(null, {pointToLayer: summitStyle, onEachFeature: eachFeature, filter: filterFunc});
+
         let hydrateFunc = function(layer) {
             console.log("hydrating");
             omnivore.csv('../shared/summitslist-W7W_2025-jan-06.csv', {latfield: 'Latitude', lonfield: 'Longitude', delimiter: ','}, layer);
