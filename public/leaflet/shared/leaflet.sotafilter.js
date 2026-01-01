@@ -42,6 +42,21 @@ L.Control.SotaFilter = L.Control.extend({
                 "WA-Pend Oreille":      [true, "PO"],
                 "WA-Washington East":   [true, "WE"],
             },
+            access: {
+                "Open":                 [true, "open"],
+                "Open (seasonal)":      [true, "seasonal"],
+                "Open (special care)":  [true, "care"],
+                "Permit (Paid)":        [true, "paidpermit"],
+                "Permit (Free)":        [true, "freepermit"],
+                "Permit (unk)":         [true, "unkpermit"],
+                "Request":              [true, "request"],
+                "Unstated":             [true, "unstated"],
+                "Restricted":           [true, "restricted"],
+                "Changing":             [true, "changing"],
+                "Unsure":               [true, "unsure"],
+                "Multiple":             [true, "multiple"],
+                "Blank":                [true, "blank"],
+            },
         };
     },
     onAdd: function(map) {
@@ -155,6 +170,7 @@ L.Control.SotaFilter = L.Control.extend({
         let altMin = this._model.altMin;
         let altMax = this._model.altMax;
         let regions = this._model.regions;
+        let access = this._model.access;
         return function(feature) {
             if ((!isNaN(pointMin) && feature.properties.Points < pointMin) || (!isNaN(pointMax) && feature.properties.Points > pointMax)) {
                 return false;
@@ -167,6 +183,19 @@ L.Control.SotaFilter = L.Control.extend({
             }
             let region = feature.properties.RegionName;
             if (!regions[region][0]) {
+                return false;
+            }
+            let summitAccess = feature.properties.ComputedAccess;
+            if (!summitAccess) {
+                summitAccess = "Blank";
+            }
+            if (summitAccess.includes("?")) {
+                summitAccess = "Unsure";
+            }
+            if (summitAccess.includes("/")) {
+                summitAccess = "Multiple";
+            }
+            if (!access[summitAccess][0]) {
                 return false;
             }
             return true;
@@ -266,11 +295,33 @@ L.Control.SotaFilter = L.Control.extend({
             itmLabel.innerText = regionName;
             L.DomEvent.on(itmInput, "change", this._handleRegion, this);
         }
+
+
+
+        let filterAccess = L.DomUtil.create("div", "filter-criterion", this._view.presets);
+        filterAccess.innerText = "Access";
+        for (let accessType in this._model.access) {
+            let aId = this._model.access[accessType][1];
+            L.DomUtil.create("br", "", filterAccess);
+            let itmInput = L.DomUtil.create("input", "", filterAccess);
+            itmInput.type = "checkbox";
+            itmInput.checked = true;
+            itmInput.id = aId;
+            let itmLabel = L.DomUtil.create("label", "", filterAccess);
+            itmLabel.htmlFor = aId;
+            itmLabel.innerText = accessType;
+            L.DomEvent.on(itmInput, "change", this._handleAccess, this);
+        }
     },
     _handleRegion: function(e) {
         var val = e.target.checked;
         var key = document.querySelector(`label[for="${e.target.id}"]`).innerText;
         this._model.regions[key][0] = val;
+    },
+    _handleAccess: function(e) {
+        var val = e.target.checked;
+        var key = document.querySelector(`label[for="${e.target.id}"]`).innerText;
+        this._model.access[key][0] = val;
     },
     _buildCustomView: function() {
         let filterCustom = L.DomUtil.create("div", "filter-criterion", this._view.custom);
