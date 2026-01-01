@@ -23,6 +23,25 @@ L.Control.SotaFilter = L.Control.extend({
             pointMax: 10,
             altMin: 0,
             altMax: NaN,
+            regions: {
+                "WA-Northern Olympics": [true, "NO"],
+                "WA-Southern Olympics": [true, "SO"],
+                "WA-Pacific-Lewis":     [true, "PL"],
+                "WA-Lower Columbia":    [true, "LC"],
+                "WA-Middle Columbia":   [true, "MC"],
+                "WA-Rainier-Salish":    [true, "RS"],
+                "WA-King":              [true, "KG"],
+                "WA-Snohomish":         [true, "SN"],
+                "WA-Skagit":            [true, "SK"],
+                "WA-Whatcom":           [true, "WH"],
+                "WA-Central Washington":[true, "CW"],
+                "WA-Chelan":            [true, "CH"],
+                "WA-Okanogan":          [true, "OK"],
+                "WA-Ferry":             [true, "FR"],
+                "WA-Stevens":           [true, "ST"],
+                "WA-Pend Oreille":      [true, "PO"],
+                "WA-Washington East":   [true, "WE"],
+            },
         };
     },
     onAdd: function(map) {
@@ -135,6 +154,7 @@ L.Control.SotaFilter = L.Control.extend({
         let activMax = this._model.activMax;
         let altMin = this._model.altMin;
         let altMax = this._model.altMax;
+        let regions = this._model.regions;
         return function(feature) {
             if ((!isNaN(pointMin) && feature.properties.Points < pointMin) || (!isNaN(pointMax) && feature.properties.Points > pointMax)) {
                 return false;
@@ -143,6 +163,10 @@ L.Control.SotaFilter = L.Control.extend({
                 return false;
             }
             if ((!isNaN(altMin) && feature.properties.AltFt < altMin) || (!isNaN(altMax) && feature.properties.AltFt > altMax)) {
+                return false;
+            }
+            let region = feature.properties.RegionName;
+            if (!regions[region][0]) {
                 return false;
             }
             return true;
@@ -224,6 +248,29 @@ L.Control.SotaFilter = L.Control.extend({
         elevMaxInput.min = 0;
         elevMaxInput.placeholder = "(max)";
         L.DomEvent.on(elevMaxInput, "change", function(e){this._model.elevMax = parseInt(e.target.value);}, this);
+
+        
+
+        let filterRegion = L.DomUtil.create("div", "filter-criterion", this._view.presets);
+        filterRegion.innerText = "Region";
+        for (let regionName in this._model.regions) {
+            let rId = this._model.regions[regionName][1];
+            rId = `region-${rId}`;
+            L.DomUtil.create("br", "", filterRegion);
+            let itmInput = L.DomUtil.create("input", "", filterRegion);
+            itmInput.type = "checkbox";
+            itmInput.checked = true;
+            itmInput.id = rId;
+            let itmLabel = L.DomUtil.create("label", "", filterRegion);
+            itmLabel.htmlFor = rId;
+            itmLabel.innerText = regionName;
+            L.DomEvent.on(itmInput, "change", this._handleRegion, this);
+        }
+    },
+    _handleRegion: function(e) {
+        var val = e.target.checked;
+        var key = document.querySelector(`label[for="${e.target.id}"]`).innerText;
+        this._model.regions[key][0] = val;
     },
     _buildCustomView: function() {
         let filterCustom = L.DomUtil.create("div", "filter-criterion", this._view.custom);
