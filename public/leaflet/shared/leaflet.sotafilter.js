@@ -42,6 +42,10 @@ L.Control.SotaFilter = L.Control.extend({
                 "WA-Pend Oreille":      [true, "PO"],
                 "WA-Washington East":   [true, "WE"],
             },
+            actives: {
+                "TRUE": [true,  "Valid"],
+                "FALSE":[false, "Invalid"],
+            },
             access: {
                 "Open":                 [true, "open"],
                 "Open (seasonal)":      [true, "seasonal"],
@@ -163,6 +167,7 @@ L.Control.SotaFilter = L.Control.extend({
     },
     _buildPresetsFilter: function() {
         console.log(this._model);
+        let actives = this._model.actives;
         let pointMin = this._model.pointMin;
         let pointMax = this._model.pointMax;
         let activMin = this._model.activMin;
@@ -172,6 +177,10 @@ L.Control.SotaFilter = L.Control.extend({
         let regions = this._model.regions;
         let access = this._model.access;
         return function(feature) {
+            let summitActive = feature.properties.CurrentlyActive;
+            if (!actives[summitActive][0]) {
+                return false;
+            }
             if ((!isNaN(pointMin) && feature.properties.Points < pointMin) || (!isNaN(pointMax) && feature.properties.Points > pointMax)) {
                 return false;
             }
@@ -206,6 +215,23 @@ L.Control.SotaFilter = L.Control.extend({
         return func;
     },
     _buildPresetsView: function() {
+        let filterActive = L.DomUtil.create("div", "filter-criterion", this._view.presets);
+        filterActive.innerText = "Summit Current Status";
+        for (let activeType in this._model.actives) {
+            let aId = `active-${activeType}`;
+            L.DomUtil.create("br", "", filterActive);
+            let itmInput = L.DomUtil.create("input", "", filterActive);
+            itmInput.type = "checkbox";
+            itmInput.checked = (activeType == "TRUE");
+            itmInput.id = aId;
+            let itmLabel = L.DomUtil.create("label", "", filterActive);
+            itmLabel.htmlFor = aId;
+            itmLabel.innerText = this._model.actives[activeType][1];
+            L.DomEvent.on(itmInput, "change", this._handleActive, this);
+        }
+
+
+
         let filterActivations = L.DomUtil.create("div", "filter-criterion", this._view.presets);
         let activMinLabel = L.DomUtil.create("label", "", filterActivations);
         activMinLabel.htmlFor = "activation-min";
@@ -312,6 +338,11 @@ L.Control.SotaFilter = L.Control.extend({
             itmLabel.innerText = accessType;
             L.DomEvent.on(itmInput, "change", this._handleAccess, this);
         }
+    },
+    _handleActive: function(e) {
+        var val = e.target.checked;
+        var key = e.target.id.split("-")[1];
+        this._model.actives[key][0] = val;
     },
     _handleRegion: function(e) {
         var val = e.target.checked;
