@@ -21,6 +21,8 @@ L.Control.SotaFilter = L.Control.extend({
             activMax: NaN,
             pointMin: 0,
             pointMax: 10,
+            altMin: 0,
+            altMax: NaN,
         };
     },
     onAdd: function(map) {
@@ -131,11 +133,16 @@ L.Control.SotaFilter = L.Control.extend({
         let pointMax = this._model.pointMax;
         let activMin = this._model.activMin;
         let activMax = this._model.activMax;
+        let altMin = this._model.altMin;
+        let altMax = this._model.altMax;
         return function(feature) {
             if ((!isNaN(pointMin) && feature.properties.Points < pointMin) || (!isNaN(pointMax) && feature.properties.Points > pointMax)) {
                 return false;
             }
             if ((!isNaN(activMin) && feature.properties.ActivationCount < activMin) || (!isNaN(activMax) && feature.properties.ActivationCount > activMax)) {
+                return false;
+            }
+            if ((!isNaN(altMin) && feature.properties.AltFt < altMin) || (!isNaN(altMax) && feature.properties.AltFt > altMax)) {
                 return false;
             }
             return true;
@@ -193,6 +200,30 @@ L.Control.SotaFilter = L.Control.extend({
         pointMaxInput.max = 10;
         pointMaxInput.placeholder = "10";
         L.DomEvent.on(pointMaxInput, "change", function(e){this._model.pointMax = parseInt(e.target.value);}, this);
+
+
+
+        let filterElevation = L.DomUtil.create("div", "filter-criterion", this._view.presets);
+        let elevMinLabel = L.DomUtil.create("label", "", filterElevation);
+        elevMinLabel.htmlFor = "elev-min";
+        elevMinLabel.innerText = "Elevation";
+        let elevMinInput = L.DomUtil.create("input", "", filterElevation);
+        elevMinInput.type = "number";
+        elevMinInput.id = "elev-min";
+        elevMinInput.min = 0;
+        elevMinInput.placeholder = "0";
+        L.DomEvent.on(elevMinInput, "change", function(e){this._model.elevMin = parseInt(e.target.value);}, this);
+
+        L.DomUtil.create("br", "", filterElevation);
+        let elevMaxLabel = L.DomUtil.create("label", "", filterElevation);
+        elevMaxLabel.htmlFor = "elev-max";
+        elevMaxLabel.innerText = "to";
+        let elevMaxInput = L.DomUtil.create("input", "", filterElevation);
+        elevMaxInput.type = "number";
+        elevMaxInput.id = "elev-max";
+        elevMaxInput.min = 0;
+        elevMaxInput.placeholder = "(max)";
+        L.DomEvent.on(elevMaxInput, "change", function(e){this._model.elevMax = parseInt(e.target.value);}, this);
     },
     _buildCustomView: function() {
         let filterCustom = L.DomUtil.create("div", "filter-criterion", this._view.custom);
