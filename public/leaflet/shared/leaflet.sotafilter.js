@@ -66,7 +66,7 @@ L.Control.SotaFilter = L.Control.extend({
         L.DomEvent.on(presetsInput, "change", this._handleCategoryRadio, this);
 
         let presetsLabel = L.DomUtil.create("label", null, this._view.container);
-        presetsLabel.for = "presets";
+        presetsLabel.htmlFor = "presets";
         presetsLabel.innerText = "Presets";
 
         L.DomUtil.create("br", null, this._view.container);
@@ -79,7 +79,7 @@ L.Control.SotaFilter = L.Control.extend({
         L.DomEvent.on(customInput, "change", this._handleCategoryRadio, this);
 
         let customLabel = L.DomUtil.create("label", null, this._view.container);
-        customLabel.for = "custom";
+        customLabel.htmlFor = "custom";
         customLabel.innerText = "Custom";
 
         L.DomUtil.create("br", null, this._view.container);
@@ -148,7 +148,7 @@ L.Control.SotaFilter = L.Control.extend({
     _buildPresets: function() {
         let filterActivations = L.DomUtil.create("div", "filter-criterion", this._view.presets);
         let activMinLabel = L.DomUtil.create("label", "", filterActivations);
-        activMinLabel.for = "activation-min";
+        activMinLabel.htmlFor = "activation-min";
         activMinLabel.innerText = "Activations";
         let activMinInput = L.DomUtil.create("input", "", filterActivations);
         activMinInput.type = "number";
@@ -158,7 +158,7 @@ L.Control.SotaFilter = L.Control.extend({
 
         L.DomUtil.create("br", "", filterActivations);
         let activMaxLabel = L.DomUtil.create("label", "", filterActivations);
-        activMaxLabel.for = "activation-max";
+        activMaxLabel.htmlFor = "activation-max";
         activMaxLabel.innerText = "to";
         let activMaxInput = L.DomUtil.create("input", "", filterActivations);
         activMaxInput.type = "number";
@@ -170,7 +170,7 @@ L.Control.SotaFilter = L.Control.extend({
 
         let filterPoints = L.DomUtil.create("div", "filter-criterion", this._view.presets);
         let pointMinLabel = L.DomUtil.create("label", "", filterPoints);
-        pointMinLabel.for = "point-min";
+        pointMinLabel.htmlFor = "point-min";
         pointMinLabel.innerText = "Points";
         let pointMinInput = L.DomUtil.create("input", "", filterPoints);
         pointMinInput.type = "number";
@@ -181,7 +181,7 @@ L.Control.SotaFilter = L.Control.extend({
 
         L.DomUtil.create("br", "", filterPoints);
         let pointMaxLabel = L.DomUtil.create("label", "", filterPoints);
-        pointMaxLabel.for = "point-max";
+        pointMaxLabel.htmlFor = "point-max";
         pointMaxLabel.innerText = "to";
         let pointMaxInput = L.DomUtil.create("input", "", filterPoints);
         pointMaxInput.type = "number";
@@ -193,7 +193,7 @@ L.Control.SotaFilter = L.Control.extend({
     _buildCustom: function() {
         let filterCustom = L.DomUtil.create("div", "filter-criterion", this._view.custom);
         let customTextLabel = L.DomUtil.create("label", "", filterCustom);
-        customTextLabel.for = "customtext";
+        customTextLabel.htmlFor = "customtext";
         customTextLabel.innerText = 'let func = Function("feature", ...);';
         let customTextInput = L.DomUtil.create("input", "", filterCustom);
         customTextInput.type = "text";
