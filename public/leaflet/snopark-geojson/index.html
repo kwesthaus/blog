@@ -469,7 +469,7 @@
 
         let hydrateFunc = function(layer) {
             console.log("hydrating");
-            omnivore.csv('../shared/summitslist-W7W_2025-jan-06.csv', {latfield: 'Latitude', lonfield: 'Longitude', delimiter: ','}, layer);
+            omnivore.csv('../shared/summitslist-CUSTOM.csv', {latfield: 'Latitude', lonfield: 'Longitude', delimiter: ','}, layer);
         }
         hydrateFunc(summitLayer);
         summitLayer.addTo(map);
