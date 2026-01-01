@@ -179,7 +179,7 @@ L.Control.SotaFilter = L.Control.extend({
         pointMinInput.max = 10;
         L.DomEvent.on(pointMinInput, "change", function(e){this._model.pointMin = parseInt(e.target.value);}, this);
 
-        L.DomUtil.create("br", "", filterActivations);
+        L.DomUtil.create("br", "", filterPoints);
         let pointMaxLabel = L.DomUtil.create("label", "", filterPoints);
         pointMaxLabel.for = "point-max";
         pointMaxLabel.innerText = "to";
