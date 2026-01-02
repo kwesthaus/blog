@@ -64,8 +64,9 @@ L.Control.SotaFilter = L.Control.extend({
             contents: null,
             presets: null,
             custom: null,
+            inputs: {},
         };
-        this._model = this._defaultModel;
+        this._model = window.structuredClone(this._defaultModel);
     },
     onAdd: function(map) {
         this._map = map;
@@ -81,7 +82,7 @@ L.Control.SotaFilter = L.Control.extend({
 
 
     _initLayout: function() {
-        this._buildContainer();
+        this._buildContainerView();
         L.DomEvent.disableClickPropagation(this._view.container);
         L.DomEvent.disableScrollPropagation(this._view.container);
         if (this.options.collapsible) {
@@ -103,7 +104,7 @@ L.Control.SotaFilter = L.Control.extend({
         this._view.anchor.style.display = "block";
         this._view.contents.style.display = "none";
     },
-    _buildContainer: function() {
+    _buildContainerView: function() {
         this._view.container = L.DomUtil.create("div", "leaflet-control leaflet-bar leaflet-control-sotafilter");
 
         // anchor shown when collapsed
@@ -118,13 +119,12 @@ L.Control.SotaFilter = L.Control.extend({
         var title = L.DomUtil.create("h3", "", this._view.contents);
         title.innerText = this.options.title;
 
-        let presetsInput = L.DomUtil.create("input", null, this._view.contents);
-        presetsInput.type = "radio";
-        presetsInput.name = "filter-category";
-        presetsInput.id = "preset-radio";
-        presetsInput.value = "presets";
-        presetsInput.checked = (this._model.selectedCategory == presetsInput.value);
-        L.DomEvent.on(presetsInput, "change", this._handleCategoryRadio, this);
+        this._view.inputs['preset'] = L.DomUtil.create("input", null, this._view.contents);
+        this._view.inputs['preset'].type = "radio";
+        this._view.inputs['preset'].name = "filter-category";
+        this._view.inputs['preset'].id = "preset-radio";
+        this._view.inputs['preset'].value = "presets";
+        L.DomEvent.on(this._view.inputs['preset'], "change", this._handleCategoryRadio, this);
 
         let presetsLabel = L.DomUtil.create("label", null, this._view.contents);
         presetsLabel.htmlFor = "presets";
@@ -132,13 +132,12 @@ L.Control.SotaFilter = L.Control.extend({
 
         L.DomUtil.create("br", null, this._view.contents);
 
-        let customInput = L.DomUtil.create("input", null, this._view.contents);
-        customInput.type = "radio";
-        customInput.name = "filter-category";
-        customInput.id = "custom-radio";
-        customInput.value = "custom";
-        customInput.checked = (this._model.selectedCategory == customInput.value);
-        L.DomEvent.on(customInput, "change", this._handleCategoryRadio, this);
+        this._view.inputs['custom'] = L.DomUtil.create("input", null, this._view.contents);
+        this._view.inputs['custom'].type = "radio";
+        this._view.inputs['custom'].name = "filter-category";
+        this._view.inputs['custom'].id = "custom-radio";
+        this._view.inputs['custom'].value = "custom";
+        L.DomEvent.on(this._view.inputs['custom'], "change", this._handleCategoryRadio, this);
 
         let customLabel = L.DomUtil.create("label", null, this._view.contents);
         customLabel.htmlFor = "custom";
@@ -149,30 +148,35 @@ L.Control.SotaFilter = L.Control.extend({
         this._view.presets = L.DomUtil.create("div", "filter-category", this._view.contents);
         this._view.presets.id = "presets-div";
         this._view.presets.innerText = "Presets";
-        if (this._model.selectedCategory == "presets") {
-            this._view.presets.style.display = "block";
-        } else {
-            this._view.presets.style.display = "none";
-        }
         this._buildPresetsView();
         this._view.custom = L.DomUtil.create("div", "filter-category", this._view.contents);
         this._view.custom.id = "custom-div";
         this._view.custom.innerText = "Custom";
-        if (this._model.selectedCategory == "custom") {
-            this._view.custom.style.display = "block";
-        } else {
-            this._view.custom.style.display = "none";
-        }
         this._buildCustomView();
 
-        let clearButton = L.DomUtil.create("button", "", this._view.contents);
-        clearButton.id = "filterclear";
-        clearButton.innerText = "Clear";
+        let resetButton = L.DomUtil.create("button", "", this._view.contents);
+        resetButton.type = "button";
+        resetButton.id = "filterreset";
+        resetButton.innerText = "Reset";
+        L.DomEvent.on(resetButton, "click", this._resetFilters, this);
         let updateButton = L.DomUtil.create("button", "", this._view.contents);
         updateButton.type = "button";
         updateButton.id = "filterupdate";
         updateButton.innerText = "Apply";
         L.DomEvent.on(updateButton, "click", this._applyFilters, this);
+
+        this._setContainerView();
+    },
+    _setContainerView: function() {
+        this._view.inputs['preset'].checked = (this._model.selectedCategory == this._view.inputs['preset'].value);
+        this._view.inputs['custom'].checked = (this._model.selectedCategory == this._view.inputs['custom'].value);
+        if (this._model.selectedCategory == "presets") {
+            this._view.presets.style.display = "block";
+            this._view.custom.style.display = "none";
+        } else {
+            this._view.presets.style.display = "none";
+            this._view.custom.style.display = "block";
+        }
     },
     _handleCategoryRadio: function(e) {
         this._model.selectedCategory = e.target.value;
@@ -183,6 +187,12 @@ L.Control.SotaFilter = L.Control.extend({
         selectedId = this._model.selectedCategory + "-div";
         let selectedDiv = document.getElementById(selectedId);
         selectedDiv.style.display = "block";
+    },
+    _resetFilters: function(e) {
+        this._model = window.structuredClone(this._defaultModel);
+        this._setContainerView();
+        this._setPresetsView();
+        this._setCustomView();
     },
     _applyFilters: function(e) {
         let filterFunc = null;
@@ -243,13 +253,15 @@ L.Control.SotaFilter = L.Control.extend({
         };
     },
     _buildCustomFilter: function() {
+        let func = null;
         if (this._model.customText) {
-            let func = new Function("feature", this._model.customText);
+            func = new Function("feature", this._model.customText);
         } else {
-            let func = new Function("feature", this._defaultModel.customText);
+            func = new Function("feature", this._defaultModel.customText);
         }
         return func;
     },
+
     _buildPresetsView: function() {
         let filterActive = L.DomUtil.create("div", "filter-criterion", this._view.presets);
         filterActive.innerText = "Summit Current Status";
@@ -272,25 +284,23 @@ L.Control.SotaFilter = L.Control.extend({
         let activMinLabel = L.DomUtil.create("label", "", filterActivations);
         activMinLabel.htmlFor = "activation-min";
         activMinLabel.innerText = "Activations";
-        let activMinInput = L.DomUtil.create("input", "", filterActivations);
-        activMinInput.type = "number";
-        activMinInput.id = "activation-min";
-        activMinInput.min = 0;
-        activMinInput.placeholder = this._defaultModel.activMin;
-        activMinInput.value = this._model.activMin;
-        L.DomEvent.on(activMinInput, "change", function(e){this._model.activMin = parseInt(e.target.value);}, this);
+        this._view.inputs['activMin'] = L.DomUtil.create("input", "", filterActivations);
+        this._view.inputs['activMin'].type = "number";
+        this._view.inputs['activMin'].id = "activation-min";
+        this._view.inputs['activMin'].min = 0;
+        this._view.inputs['activMin'].placeholder = this._defaultModel.activMin;
+        L.DomEvent.on(this._view.inputs['activMin'], "change", function(e){this._model.activMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterActivations);
         let activMaxLabel = L.DomUtil.create("label", "", filterActivations);
         activMaxLabel.htmlFor = "activation-max";
         activMaxLabel.innerText = "to";
-        let activMaxInput = L.DomUtil.create("input", "", filterActivations);
-        activMaxInput.type = "number";
-        activMaxInput.id = "activation-max";
-        activMaxInput.min = 0;
-        activMaxInput.placeholder = "(max)";
-        activMaxInput.value = this._model.activMax;
-        L.DomEvent.on(activMaxInput, "change", function(e){this._model.activMax = parseInt(e.target.value);}, this);
+        this._view.inputs['activMax'] = L.DomUtil.create("input", "", filterActivations);
+        this._view.inputs['activMax'].type = "number";
+        this._view.inputs['activMax'].id = "activation-max";
+        this._view.inputs['activMax'].min = 0;
+        this._view.inputs['activMax'].placeholder = "(max)";
+        L.DomEvent.on(this._view.inputs['activMax'], "change", function(e){this._model.activMax = parseInt(e.target.value);}, this);
 
 
 
@@ -298,27 +308,25 @@ L.Control.SotaFilter = L.Control.extend({
         let pointMinLabel = L.DomUtil.create("label", "", filterPoints);
         pointMinLabel.htmlFor = "point-min";
         pointMinLabel.innerText = "Points";
-        let pointMinInput = L.DomUtil.create("input", "", filterPoints);
-        pointMinInput.type = "number";
-        pointMinInput.id = "point-min";
-        pointMinInput.min = 0;
-        pointMinInput.max = 10;
-        pointMinInput.placeholder = this._defaultModel.pointMin;
-        pointMinInput.value = this._model.pointMin;
-        L.DomEvent.on(pointMinInput, "change", function(e){this._model.pointMin = parseInt(e.target.value);}, this);
+        this._view.inputs['pointMin'] = L.DomUtil.create("input", "", filterPoints);
+        this._view.inputs['pointMin'].type = "number";
+        this._view.inputs['pointMin'].id = "point-min";
+        this._view.inputs['pointMin'].min = 0;
+        this._view.inputs['pointMin'].max = 10;
+        this._view.inputs['pointMin'].placeholder = this._defaultModel.pointMin;
+        L.DomEvent.on(this._view.inputs['pointMin'], "change", function(e){this._model.pointMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterPoints);
         let pointMaxLabel = L.DomUtil.create("label", "", filterPoints);
         pointMaxLabel.htmlFor = "point-max";
         pointMaxLabel.innerText = "to";
-        let pointMaxInput = L.DomUtil.create("input", "", filterPoints);
-        pointMaxInput.type = "number";
-        pointMaxInput.id = "point-max";
-        pointMaxInput.min = 0;
-        pointMaxInput.max = 10;
-        pointMaxInput.placeholder = this._defaultModel.pointMax;
-        pointMaxInput.value = this._model.pointMax;
-        L.DomEvent.on(pointMaxInput, "change", function(e){this._model.pointMax = parseInt(e.target.value);}, this);
+        this._view.inputs['pointMax'] = L.DomUtil.create("input", "", filterPoints);
+        this._view.inputs['pointMax'].type = "number";
+        this._view.inputs['pointMax'].id = "point-max";
+        this._view.inputs['pointMax'].min = 0;
+        this._view.inputs['pointMax'].max = 10;
+        this._view.inputs['pointMax'].placeholder = this._defaultModel.pointMax;
+        L.DomEvent.on(this._view.inputs['pointMax'], "change", function(e){this._model.pointMax = parseInt(e.target.value);}, this);
 
 
 
@@ -326,25 +334,23 @@ L.Control.SotaFilter = L.Control.extend({
         let elevMinLabel = L.DomUtil.create("label", "", filterElevation);
         elevMinLabel.htmlFor = "elev-min";
         elevMinLabel.innerText = "Elevation";
-        let elevMinInput = L.DomUtil.create("input", "", filterElevation);
-        elevMinInput.type = "number";
-        elevMinInput.id = "elev-min";
-        elevMinInput.min = 0;
-        elevMinInput.placeholder = this._defaultModel.altMin;
-        elevMinInput.value = this._model.altMin;
-        L.DomEvent.on(elevMinInput, "change", function(e){this._model.altMin = parseInt(e.target.value);}, this);
+        this._view.inputs['elevMin'] = L.DomUtil.create("input", "", filterElevation);
+        this._view.inputs['elevMin'].type = "number";
+        this._view.inputs['elevMin'].id = "elev-min";
+        this._view.inputs['elevMin'].min = 0;
+        this._view.inputs['elevMin'].placeholder = this._defaultModel.altMin;
+        L.DomEvent.on(this._view.inputs['elevMin'], "change", function(e){this._model.altMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterElevation);
         let elevMaxLabel = L.DomUtil.create("label", "", filterElevation);
         elevMaxLabel.htmlFor = "elev-max";
         elevMaxLabel.innerText = "to";
-        let elevMaxInput = L.DomUtil.create("input", "", filterElevation);
-        elevMaxInput.type = "number";
-        elevMaxInput.id = "elev-max";
-        elevMaxInput.min = 0;
-        elevMaxInput.placeholder = "(max)";
-        elevMaxInput.value = this._model.altMax;
-        L.DomEvent.on(elevMaxInput, "change", function(e){this._model.altMax = parseInt(e.target.value);}, this);
+        this._view.inputs['elevMax'] = L.DomUtil.create("input", "", filterElevation);
+        this._view.inputs['elevMax'].type = "number";
+        this._view.inputs['elevMax'].id = "elev-max";
+        this._view.inputs['elevMax'].min = 0;
+        this._view.inputs['elevMax'].placeholder = "(max)";
+        L.DomEvent.on(this._view.inputs['elevMax'], "change", function(e){this._model.altMax = parseInt(e.target.value);}, this);
 
         
 
@@ -380,6 +386,16 @@ L.Control.SotaFilter = L.Control.extend({
             itmLabel.innerText = accessType;
             L.DomEvent.on(itmInput, "change", this._handleAccess, this);
         }
+
+        this._setPresetsView();
+    },
+    _setPresetsView: function() {
+        this._view.inputs['activMin'].value = this._model.activMin;
+        this._view.inputs['activMax'].value = this._model.activMax;
+        this._view.inputs['pointMin'].value = this._model.pointMin;
+        this._view.inputs['pointMax'].value = this._model.pointMax;
+        this._view.inputs['elevMin'].value = this._model.altMin;
+        this._view.inputs['elevMax'].value = this._model.altMax;
     },
     _handleActive: function(e) {
         var val = e.target.checked;
@@ -396,19 +412,24 @@ L.Control.SotaFilter = L.Control.extend({
         var key = document.querySelector(`label[for="${e.target.id}"]`).innerText;
         this._model.access[key][0] = val;
     },
+
     _buildCustomView: function() {
         let filterCustom = L.DomUtil.create("div", "filter-criterion", this._view.custom);
         let customTextLabel = L.DomUtil.create("label", "", filterCustom);
         customTextLabel.htmlFor = "customtext";
         customTextLabel.innerText = 'let func = Function("feature", ...);';
         L.DomUtil.create("br", "", filterCustom);
-        let customTextInput = L.DomUtil.create("textarea", "", filterCustom);
-        customTextInput.id = "customtext";
-        customTextInput.cols = 50;
-        customTextInput.rows = 10;
-        customTextInput.placeholder = this._defaultModel.customText;
-        customTextInput.value = this._model.customText;
-        L.DomEvent.on(customTextInput, "change", function(e){this._model.customText = e.target.value;}, this);
+        this._view.inputs['customText'] = L.DomUtil.create("textarea", "", filterCustom);
+        this._view.inputs['customText'].id = "customtext";
+        this._view.inputs['customText'].cols = 50;
+        this._view.inputs['customText'].rows = 10;
+        this._view.inputs['customText'].placeholder = this._defaultModel.customText;
+        L.DomEvent.on(this._view.inputs['customText'], "change", function(e){this._model.customText = e.target.value;}, this);
+
+        this._setCustomView();
+    },
+    _setCustomView: function() {
+        this._view.inputs['customText'].value = this._model.customText;
     },
 });
 L.control.sotaFilter = function(opts) {
