@@ -291,7 +291,7 @@ L.Control.SotaFilter = L.Control.extend({
         elevMinInput.id = "elev-min";
         elevMinInput.min = 0;
         elevMinInput.placeholder = "0";
-        L.DomEvent.on(elevMinInput, "change", function(e){this._model.elevMin = parseInt(e.target.value);}, this);
+        L.DomEvent.on(elevMinInput, "change", function(e){this._model.altMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterElevation);
         let elevMaxLabel = L.DomUtil.create("label", "", filterElevation);
@@ -302,7 +302,7 @@ L.Control.SotaFilter = L.Control.extend({
         elevMaxInput.id = "elev-max";
         elevMaxInput.min = 0;
         elevMaxInput.placeholder = "(max)";
-        L.DomEvent.on(elevMaxInput, "change", function(e){this._model.elevMax = parseInt(e.target.value);}, this);
+        L.DomEvent.on(elevMaxInput, "change", function(e){this._model.altMax = parseInt(e.target.value);}, this);
 
         
 
