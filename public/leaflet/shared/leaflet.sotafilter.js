@@ -148,7 +148,6 @@ L.Control.SotaFilter = L.Control.extend({
         L.DomEvent.on(updateButton, "click", this._applyFilters, this);
     },
     _handleCategoryRadio: function(e) {
-        var val = e.target.checked;
         this._model.selectedCategory = e.target.value;
         let categoryContainers = document.getElementsByClassName("filter-category");
         for (let div of categoryContainers) {
