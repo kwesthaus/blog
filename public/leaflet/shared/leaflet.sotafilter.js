@@ -143,6 +143,7 @@ L.Control.SotaFilter = L.Control.extend({
         clearButton.id = "filterclear";
         clearButton.innerText = "Clear";
         let updateButton = L.DomUtil.create("button", "", this._view.container);
+        updateButton.type = "button";
         updateButton.id = "filterupdate";
         updateButton.innerText = "Apply";
         L.DomEvent.on(updateButton, "click", this._applyFilters, this);
