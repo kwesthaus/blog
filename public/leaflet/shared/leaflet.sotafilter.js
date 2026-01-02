@@ -1,8 +1,8 @@
 L.Control.SotaFilter = L.Control.extend({
     options: {
         position: "topleft",
-        title: "",
-        collapsible: false,
+        title: "Summit Filter",
+        collapsible: true,
     },
     _defaultModel: {
         selectedCategory: "presets",
@@ -84,25 +84,32 @@ L.Control.SotaFilter = L.Control.extend({
         this._buildContainer();
         L.DomEvent.disableClickPropagation(this._view.container);
         L.DomEvent.disableScrollPropagation(this._view.container);
-        /*
         if (this.options.collapsible) {
             L.DomEvent.on(
                 this._view.container,
                 {mouseenter: this._expand, mouseleave: this._collapse},
                 this
             );
+            this._collapse();
         } else {
             this._expand();
         }
-        */
     },
     _buildContainer: function() {
         this._view.container = L.DomUtil.create("div", "leaflet-control leaflet-bar leaflet-control-sotafilter");
-        if (this.options.title) {
-            var title = L.DomUtil.create("h3", "", this._view.container);
-            title.innerText = this.options.title;
-        }
-        let presetsInput = L.DomUtil.create("input", null, this._view.container);
+
+        // anchor shown when collapsed
+        this._view.anchor = L.DomUtil.create("a", "leaflet-sotafilter-toggle", this._view.container);
+        this._view.anchor.href = "#";
+        this._view.anchor.title = this.options.title;
+        this._view.anchor.role = "button";
+
+        // contents shown when expanded
+        this._view.contents = L.DomUtil.create("div", "leaflet-sotafilter-contents", this._view.container);
+
+        var title = L.DomUtil.create("h3", "", this._view.contents);
+        title.innerText = this.options.title;
+        let presetsInput = L.DomUtil.create("input", null, this._view.contents);
         presetsInput.type = "radio";
         presetsInput.name = "filter-category";
         presetsInput.id = "preset-radio";
@@ -110,43 +117,51 @@ L.Control.SotaFilter = L.Control.extend({
         presetsInput.checked = true;
         L.DomEvent.on(presetsInput, "change", this._handleCategoryRadio, this);
 
-        let presetsLabel = L.DomUtil.create("label", null, this._view.container);
+        let presetsLabel = L.DomUtil.create("label", null, this._view.contents);
         presetsLabel.htmlFor = "presets";
         presetsLabel.innerText = "Presets";
 
-        L.DomUtil.create("br", null, this._view.container);
+        L.DomUtil.create("br", null, this._view.contents);
 
-        let customInput = L.DomUtil.create("input", null, this._view.container);
+        let customInput = L.DomUtil.create("input", null, this._view.contents);
         customInput.type = "radio";
         customInput.name = "filter-category";
         customInput.id = "custom-radio";
         customInput.value = "custom";
         L.DomEvent.on(customInput, "change", this._handleCategoryRadio, this);
 
-        let customLabel = L.DomUtil.create("label", null, this._view.container);
+        let customLabel = L.DomUtil.create("label", null, this._view.contents);
         customLabel.htmlFor = "custom";
         customLabel.innerText = "Custom";
 
-        L.DomUtil.create("br", null, this._view.container);
+        L.DomUtil.create("br", null, this._view.contents);
 
-        this._view.presets = L.DomUtil.create("div", "filter-category", this._view.container);
+        this._view.presets = L.DomUtil.create("div", "filter-category", this._view.contents);
         this._view.presets.id = "presets-div";
         this._view.presets.innerText = "Presets";
         this._buildPresetsView();
-        this._view.custom = L.DomUtil.create("div", "filter-category", this._view.container);
+        this._view.custom = L.DomUtil.create("div", "filter-category", this._view.contents);
         this._view.custom.id = "custom-div";
         this._view.custom.innerText = "Custom";
         this._view.custom.style.display = "none";
         this._buildCustomView();
 
-        let clearButton = L.DomUtil.create("button", "", this._view.container);
+        let clearButton = L.DomUtil.create("button", "", this._view.contents);
         clearButton.id = "filterclear";
         clearButton.innerText = "Clear";
-        let updateButton = L.DomUtil.create("button", "", this._view.container);
+        let updateButton = L.DomUtil.create("button", "", this._view.contents);
         updateButton.type = "button";
         updateButton.id = "filterupdate";
         updateButton.innerText = "Apply";
         L.DomEvent.on(updateButton, "click", this._applyFilters, this);
+    },
+    _expand: function() {
+        this._view.anchor.style.display = "none";
+        this._view.contents.style.display = "block";
+    },
+    _collapse: function() {
+        this._view.anchor.style.display = "block";
+        this._view.contents.style.display = "none";
     },
     _handleCategoryRadio: function(e) {
         this._model.selectedCategory = e.target.value;
