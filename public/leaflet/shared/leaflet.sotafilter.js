@@ -109,12 +109,13 @@ L.Control.SotaFilter = L.Control.extend({
 
         var title = L.DomUtil.create("h3", "", this._view.contents);
         title.innerText = this.options.title;
+
         let presetsInput = L.DomUtil.create("input", null, this._view.contents);
         presetsInput.type = "radio";
         presetsInput.name = "filter-category";
         presetsInput.id = "preset-radio";
         presetsInput.value = "presets";
-        presetsInput.checked = true;
+        presetsInput.checked = (this._model.selectedCategory == presetsInput.value);
         L.DomEvent.on(presetsInput, "change", this._handleCategoryRadio, this);
 
         let presetsLabel = L.DomUtil.create("label", null, this._view.contents);
@@ -128,6 +129,7 @@ L.Control.SotaFilter = L.Control.extend({
         customInput.name = "filter-category";
         customInput.id = "custom-radio";
         customInput.value = "custom";
+        customInput.checked = (this._model.selectedCategory == customInput.value);
         L.DomEvent.on(customInput, "change", this._handleCategoryRadio, this);
 
         let customLabel = L.DomUtil.create("label", null, this._view.contents);
@@ -139,11 +141,20 @@ L.Control.SotaFilter = L.Control.extend({
         this._view.presets = L.DomUtil.create("div", "filter-category", this._view.contents);
         this._view.presets.id = "presets-div";
         this._view.presets.innerText = "Presets";
+        if (this._model.selectedCategory == "presets") {
+            this._view.presets.style.display = "block";
+        } else {
+            this._view.presets.style.display = "none";
+        }
         this._buildPresetsView();
         this._view.custom = L.DomUtil.create("div", "filter-category", this._view.contents);
         this._view.custom.id = "custom-div";
         this._view.custom.innerText = "Custom";
-        this._view.custom.style.display = "none";
+        if (this._model.selectedCategory == "custom") {
+            this._view.custom.style.display = "block";
+        } else {
+            this._view.custom.style.display = "none";
+        }
         this._buildCustomView();
 
         let clearButton = L.DomUtil.create("button", "", this._view.contents);
@@ -232,7 +243,11 @@ L.Control.SotaFilter = L.Control.extend({
         };
     },
     _buildCustomFilter: function() {
-        let func = new Function("feature", this._model.customText);
+        if (this._model.customText) {
+            let func = new Function("feature", this._model.customText);
+        } else {
+            let func = new Function("feature", this._defaultModel.customText);
+        }
         return func;
     },
     _buildPresetsView: function() {
@@ -261,7 +276,8 @@ L.Control.SotaFilter = L.Control.extend({
         activMinInput.type = "number";
         activMinInput.id = "activation-min";
         activMinInput.min = 0;
-        activMinInput.placeholder = "0";
+        activMinInput.placeholder = this._defaultModel.activMin;
+        activMinInput.value = this._model.activMin;
         L.DomEvent.on(activMinInput, "change", function(e){this._model.activMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterActivations);
@@ -273,6 +289,7 @@ L.Control.SotaFilter = L.Control.extend({
         activMaxInput.id = "activation-max";
         activMaxInput.min = 0;
         activMaxInput.placeholder = "(max)";
+        activMaxInput.value = this._model.activMax;
         L.DomEvent.on(activMaxInput, "change", function(e){this._model.activMax = parseInt(e.target.value);}, this);
 
 
@@ -286,7 +303,8 @@ L.Control.SotaFilter = L.Control.extend({
         pointMinInput.id = "point-min";
         pointMinInput.min = 0;
         pointMinInput.max = 10;
-        pointMinInput.placeholder = "0";
+        pointMinInput.placeholder = this._defaultModel.pointMin;
+        pointMinInput.value = this._model.pointMin;
         L.DomEvent.on(pointMinInput, "change", function(e){this._model.pointMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterPoints);
@@ -298,7 +316,8 @@ L.Control.SotaFilter = L.Control.extend({
         pointMaxInput.id = "point-max";
         pointMaxInput.min = 0;
         pointMaxInput.max = 10;
-        pointMaxInput.placeholder = "10";
+        pointMaxInput.placeholder = this._defaultModel.pointMax;
+        pointMaxInput.value = this._model.pointMax;
         L.DomEvent.on(pointMaxInput, "change", function(e){this._model.pointMax = parseInt(e.target.value);}, this);
 
 
@@ -311,7 +330,8 @@ L.Control.SotaFilter = L.Control.extend({
         elevMinInput.type = "number";
         elevMinInput.id = "elev-min";
         elevMinInput.min = 0;
-        elevMinInput.placeholder = "0";
+        elevMinInput.placeholder = this._defaultModel.altMin;
+        elevMinInput.value = this._model.altMin;
         L.DomEvent.on(elevMinInput, "change", function(e){this._model.altMin = parseInt(e.target.value);}, this);
 
         L.DomUtil.create("br", "", filterElevation);
@@ -323,6 +343,7 @@ L.Control.SotaFilter = L.Control.extend({
         elevMaxInput.id = "elev-max";
         elevMaxInput.min = 0;
         elevMaxInput.placeholder = "(max)";
+        elevMaxInput.value = this._model.altMax;
         L.DomEvent.on(elevMaxInput, "change", function(e){this._model.altMax = parseInt(e.target.value);}, this);
 
         
@@ -335,7 +356,7 @@ L.Control.SotaFilter = L.Control.extend({
             L.DomUtil.create("br", "", filterRegion);
             let itmInput = L.DomUtil.create("input", "", filterRegion);
             itmInput.type = "checkbox";
-            itmInput.checked = true;
+            itmInput.checked = this._model.regions[regionName][0];
             itmInput.id = rId;
             let itmLabel = L.DomUtil.create("label", "", filterRegion);
             itmLabel.htmlFor = rId;
@@ -352,7 +373,7 @@ L.Control.SotaFilter = L.Control.extend({
             L.DomUtil.create("br", "", filterAccess);
             let itmInput = L.DomUtil.create("input", "", filterAccess);
             itmInput.type = "checkbox";
-            itmInput.checked = true;
+            itmInput.checked = this._model.access[accessType][0];
             itmInput.id = aId;
             let itmLabel = L.DomUtil.create("label", "", filterAccess);
             itmLabel.htmlFor = aId;
@@ -386,6 +407,7 @@ L.Control.SotaFilter = L.Control.extend({
         customTextInput.cols = 50;
         customTextInput.rows = 10;
         customTextInput.placeholder = this._defaultModel.customText;
+        customTextInput.value = this._model.customText;
         L.DomEvent.on(customTextInput, "change", function(e){this._model.customText = e.target.value;}, this);
     },
 });
