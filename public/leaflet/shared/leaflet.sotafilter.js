@@ -15,7 +15,7 @@ L.Control.SotaFilter = L.Control.extend({
             custom: null,
         };
         this._model = {
-            selectedCategory: null,
+            selectedCategory: "presets",
             customText: null,
             activMin: 0,
             activMax: NaN,
@@ -103,6 +103,7 @@ L.Control.SotaFilter = L.Control.extend({
         presetsInput.name = "filter-category";
         presetsInput.id = "preset-radio";
         presetsInput.value = "presets";
+        presetsInput.checked = true;
         L.DomEvent.on(presetsInput, "change", this._handleCategoryRadio, this);
 
         let presetsLabel = L.DomUtil.create("label", null, this._view.container);
@@ -131,6 +132,7 @@ L.Control.SotaFilter = L.Control.extend({
         this._view.custom = L.DomUtil.create("div", "filter-category", this._view.container);
         this._view.custom.id = "custom-div";
         this._view.custom.innerText = "Custom";
+        this._view.custom.style.display = "none";
         this._buildCustomView();
 
         let clearButton = L.DomUtil.create("button", "", this._view.container);
