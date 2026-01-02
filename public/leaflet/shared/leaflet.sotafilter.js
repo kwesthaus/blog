@@ -4,6 +4,55 @@ L.Control.SotaFilter = L.Control.extend({
         title: "",
         collapsible: false,
     },
+    _defaultModel: {
+        selectedCategory: "presets",
+        customText: 'return (feature.properties.CurrentlyActive == "TRUE");',
+        activMin: 0,
+        activMax: NaN,
+        pointMin: 0,
+        pointMax: 10,
+        altMin: 0,
+        altMax: NaN,
+        regions: {
+            "WA-Northern Olympics": [true, "NO"],
+            "WA-Southern Olympics": [true, "SO"],
+            "WA-Pacific-Lewis":     [true, "PL"],
+            "WA-Lower Columbia":    [true, "LC"],
+            "WA-Middle Columbia":   [true, "MC"],
+            "WA-Rainier-Salish":    [true, "RS"],
+            "WA-King":              [true, "KG"],
+            "WA-Snohomish":         [true, "SN"],
+            "WA-Skagit":            [true, "SK"],
+            "WA-Whatcom":           [true, "WH"],
+            "WA-Central Washington":[true, "CW"],
+            "WA-Chelan":            [true, "CH"],
+            "WA-Okanogan":          [true, "OK"],
+            "WA-Ferry":             [true, "FR"],
+            "WA-Stevens":           [true, "ST"],
+            "WA-Pend Oreille":      [true, "PO"],
+            "WA-Washington East":   [true, "WE"],
+        },
+        actives: {
+            "TRUE": [true,  "Valid"],
+            "FALSE":[false, "Invalid"],
+        },
+        access: {
+            "Open":                 [true, "open"],
+            "Open (seasonal)":      [true, "seasonal"],
+            "Open (special care)":  [true, "care"],
+            "Permit (Paid)":        [true, "paidpermit"],
+            "Permit (Free)":        [true, "freepermit"],
+            "Permit (unk)":         [true, "unkpermit"],
+            "Request":              [true, "request"],
+            "Unstated":             [true, "unstated"],
+            "Restricted":           [true, "restricted"],
+            "Changing":             [true, "changing"],
+            "Unsure":               [true, "unsure"],
+            "Multiple":             [true, "multiple"],
+            "Blank":                [true, "blank"],
+        },
+    },
+
     initialize: function(options) {
         L.Util.setOptions(this, options);
         this._map = null;
@@ -11,57 +60,12 @@ L.Control.SotaFilter = L.Control.extend({
         this._hydrateFunc = null;
         this._view = {
             container: null,
+            anchor: null,
+            contents: null,
             presets: null,
             custom: null,
         };
-        this._model = {
-            selectedCategory: "presets",
-            customText: null,
-            activMin: 0,
-            activMax: NaN,
-            pointMin: 0,
-            pointMax: 10,
-            altMin: 0,
-            altMax: NaN,
-            regions: {
-                "WA-Northern Olympics": [true, "NO"],
-                "WA-Southern Olympics": [true, "SO"],
-                "WA-Pacific-Lewis":     [true, "PL"],
-                "WA-Lower Columbia":    [true, "LC"],
-                "WA-Middle Columbia":   [true, "MC"],
-                "WA-Rainier-Salish":    [true, "RS"],
-                "WA-King":              [true, "KG"],
-                "WA-Snohomish":         [true, "SN"],
-                "WA-Skagit":            [true, "SK"],
-                "WA-Whatcom":           [true, "WH"],
-                "WA-Central Washington":[true, "CW"],
-                "WA-Chelan":            [true, "CH"],
-                "WA-Okanogan":          [true, "OK"],
-                "WA-Ferry":             [true, "FR"],
-                "WA-Stevens":           [true, "ST"],
-                "WA-Pend Oreille":      [true, "PO"],
-                "WA-Washington East":   [true, "WE"],
-            },
-            actives: {
-                "TRUE": [true,  "Valid"],
-                "FALSE":[false, "Invalid"],
-            },
-            access: {
-                "Open":                 [true, "open"],
-                "Open (seasonal)":      [true, "seasonal"],
-                "Open (special care)":  [true, "care"],
-                "Permit (Paid)":        [true, "paidpermit"],
-                "Permit (Free)":        [true, "freepermit"],
-                "Permit (unk)":         [true, "unkpermit"],
-                "Request":              [true, "request"],
-                "Unstated":             [true, "unstated"],
-                "Restricted":           [true, "restricted"],
-                "Changing":             [true, "changing"],
-                "Unsure":               [true, "unsure"],
-                "Multiple":             [true, "multiple"],
-                "Blank":                [true, "blank"],
-            },
-        };
+        this._model = this._defaultModel;
     },
     onAdd: function(map) {
         this._map = map;
@@ -366,7 +370,7 @@ L.Control.SotaFilter = L.Control.extend({
         customTextInput.id = "customtext";
         customTextInput.cols = 50;
         customTextInput.rows = 10;
-        customTextInput.placeholder = 'return (feature.properties.RegionName == "WA-Central Washington" && feature.properties.ActivationCount == 0);';
+        customTextInput.placeholder = this._defaultModel.customText;
         L.DomEvent.on(customTextInput, "change", function(e){this._model.customText = e.target.value;}, this);
     },
 });
