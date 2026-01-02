@@ -95,6 +95,14 @@ L.Control.SotaFilter = L.Control.extend({
             this._expand();
         }
     },
+    _expand: function() {
+        this._view.anchor.style.display = "none";
+        this._view.contents.style.display = "block";
+    },
+    _collapse: function() {
+        this._view.anchor.style.display = "block";
+        this._view.contents.style.display = "none";
+    },
     _buildContainer: function() {
         this._view.container = L.DomUtil.create("div", "leaflet-control leaflet-bar leaflet-control-sotafilter");
 
@@ -165,14 +173,6 @@ L.Control.SotaFilter = L.Control.extend({
         updateButton.id = "filterupdate";
         updateButton.innerText = "Apply";
         L.DomEvent.on(updateButton, "click", this._applyFilters, this);
-    },
-    _expand: function() {
-        this._view.anchor.style.display = "none";
-        this._view.contents.style.display = "block";
-    },
-    _collapse: function() {
-        this._view.anchor.style.display = "block";
-        this._view.contents.style.display = "none";
     },
     _handleCategoryRadio: function(e) {
         this._model.selectedCategory = e.target.value;
