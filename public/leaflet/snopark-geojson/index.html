@@ -461,6 +461,30 @@
         */
 
 
+        function summitFeature(feature, layer) {
+            let header = `<h2>${feature.properties['SummitName']}</h2>`
+            let sotlasUrl = `https://sotl.as/summits/${feature.properties['SummitCode']}`
+            let sotlasLink = `<a href="${sotlasUrl}">${feature.properties['SummitCode']}</a><br>`
+            let sotadataUrl = `https://www.sotadata.org.uk/en/summit/${feature.properties['SummitCode']}`
+            let sotadataLink = `<a href="${sotadataUrl}">sotadata</a><br>`
+
+            let table = '<table><tbody>'
+            for (let [prop, val] of Object.entries(feature.properties)) {
+                if (prop == "SummitName" || prop == "SummitCode") {
+                    continue;
+                }
+                table += '<tr>';
+                table += `<th>${prop}</th>`;
+                table += `<td>${val}</td>`;
+                table += '</tr>';
+            }
+
+            table += '</tbody></table>';
+            let popup = header + sotlasLink + sotadataLink + table;
+
+            layer.bindPopup(popup);
+        }
+
         let summitStyle = function(feature, latlng) {
             let className = `summitcircle points-${feature.properties.Points}`;
 
@@ -475,7 +499,7 @@
             return L.marker(latlng, markerOptions);
         };
         let filterFunc = filterControl._buildPresetsFilter();
-        let summitLayer = L.geoJson(null, {pointToLayer: summitStyle, onEachFeature: eachFeature, filter: filterFunc});
+        let summitLayer = L.geoJson(null, {pointToLayer: summitStyle, onEachFeature: summitFeature, filter: filterFunc});
 
         let hydrateFunc = function(layer) {
             console.log("hydrating");
