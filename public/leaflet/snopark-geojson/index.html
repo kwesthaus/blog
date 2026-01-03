@@ -393,6 +393,16 @@
         addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/watershed.geojson', 'grw-watershed', badStyle, undefined, layerControl, true, legendControl);
 
 
+        regionStyle = {
+            'fillColor': '#00003f',
+            'color': '#00007f',
+            'weight': 4,
+            'opacity': 1,
+            'fillOpacity': 0.2
+        };
+        addGeojsonFileToControls('../shared/nonuniqueID-geojson/w7w-regions.geojson', 'w7w-regions', regionStyle, undefined, layerControl, true, legendControl);
+
+
         //
         // points
         //
