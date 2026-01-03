@@ -122,12 +122,12 @@ L.Control.SotaFilter = L.Control.extend({
         this._view.inputs['preset'] = L.DomUtil.create("input", null, this._view.contents);
         this._view.inputs['preset'].type = "radio";
         this._view.inputs['preset'].name = "filter-category";
-        this._view.inputs['preset'].id = "preset-radio";
+        this._view.inputs['preset'].id = "presets-radio";
         this._view.inputs['preset'].value = "presets";
         L.DomEvent.on(this._view.inputs['preset'], "change", this._handleCategoryRadio, this);
 
         let presetsLabel = L.DomUtil.create("label", null, this._view.contents);
-        presetsLabel.htmlFor = "presets";
+        presetsLabel.htmlFor = "presets-radio";
         presetsLabel.innerText = "Presets";
 
         L.DomUtil.create("br", null, this._view.contents);
@@ -140,7 +140,7 @@ L.Control.SotaFilter = L.Control.extend({
         L.DomEvent.on(this._view.inputs['custom'], "change", this._handleCategoryRadio, this);
 
         let customLabel = L.DomUtil.create("label", null, this._view.contents);
-        customLabel.htmlFor = "custom";
+        customLabel.htmlFor = "custom-radio";
         customLabel.innerText = "Custom";
 
         L.DomUtil.create("br", null, this._view.contents);
