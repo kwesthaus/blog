@@ -64,7 +64,11 @@ L.Control.SotaFilter = L.Control.extend({
             contents: null,
             presets: null,
             custom: null,
-            inputs: {},
+            inputs: {
+                'active': {},
+                'region': {},
+                'access': {},
+            },
         };
         this._model = window.structuredClone(this._defaultModel);
     },
@@ -265,13 +269,14 @@ L.Control.SotaFilter = L.Control.extend({
     _buildPresetsView: function() {
         let filterActive = L.DomUtil.create("div", "filter-criterion", this._view.presets);
         filterActive.innerText = "Summit Current Status";
+
         for (let activeType in this._model.actives) {
             let aId = `active-${activeType}`;
             L.DomUtil.create("br", "", filterActive);
             let itmInput = L.DomUtil.create("input", "", filterActive);
             itmInput.type = "checkbox";
-            itmInput.checked = (activeType == "TRUE");
             itmInput.id = aId;
+            this._view.inputs['active'][activeType] = itmInput;
             let itmLabel = L.DomUtil.create("label", "", filterActive);
             itmLabel.htmlFor = aId;
             itmLabel.innerText = this._model.actives[activeType][1];
@@ -362,8 +367,8 @@ L.Control.SotaFilter = L.Control.extend({
             L.DomUtil.create("br", "", filterRegion);
             let itmInput = L.DomUtil.create("input", "", filterRegion);
             itmInput.type = "checkbox";
-            itmInput.checked = this._model.regions[regionName][0];
             itmInput.id = rId;
+            this._view.inputs['region'][regionName] = itmInput;
             let itmLabel = L.DomUtil.create("label", "", filterRegion);
             itmLabel.htmlFor = rId;
             itmLabel.innerText = regionName;
@@ -379,8 +384,8 @@ L.Control.SotaFilter = L.Control.extend({
             L.DomUtil.create("br", "", filterAccess);
             let itmInput = L.DomUtil.create("input", "", filterAccess);
             itmInput.type = "checkbox";
-            itmInput.checked = this._model.access[accessType][0];
             itmInput.id = aId;
+            this._view.inputs['access'][accessType] = itmInput;
             let itmLabel = L.DomUtil.create("label", "", filterAccess);
             itmLabel.htmlFor = aId;
             itmLabel.innerText = accessType;
@@ -396,6 +401,18 @@ L.Control.SotaFilter = L.Control.extend({
         this._view.inputs['pointMax'].value = this._model.pointMax;
         this._view.inputs['elevMin'].value = this._model.altMin;
         this._view.inputs['elevMax'].value = this._model.altMax;
+
+        for (let [key, dom] of Object.entries(this._view.inputs['active'])) {
+            dom.checked = this._defaultModel.actives[key][0];
+        }
+
+        for (let [key, dom] of Object.entries(this._view.inputs['region'])) {
+            dom.checked = this._defaultModel.regions[key][0];
+        }
+
+        for (let [key, dom] of Object.entries(this._view.inputs['access'])) {
+            dom.checked = this._defaultModel.access[key][0];
+        }
     },
     _handleActive: function(e) {
         var val = e.target.checked;
