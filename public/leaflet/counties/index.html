@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Leaflet Map</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""/>
+    <link rel="stylesheet" href="https://ptma.github.io/Leaflet.Measure/src/leaflet.measure.css"/>
+    <link rel="stylesheet" href="https://ptma.github.io/Leaflet.Legend/src/leaflet.legend.css"/>
+
+
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+    <script src="https://ptma.github.io/Leaflet.Measure/src/leaflet.measure.js"></script>
+    <!-- <script src="https://ptma.github.io/Leaflet.Legend/src/leaflet.legend.js"></script> -->
+    <script src="../shared/leaflet.legend.js"></script>
+
+    <script src="https://unpkg.com/esri-leaflet@3.0.19/dist/esri-leaflet.js"></script>
+    <script src="https://unpkg.com/esri-leaflet-vector@4.3.2/dist/esri-leaflet-vector.js"></script>
+
+    <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script>
+
+
+
+
+    <script src="https://unpkg.com/togeojson@0.16.0"></script>
+    <script src="https://unpkg.com/leaflet-filelayer@1.2.0"></script>
+
+
+
+
+    <style type="text/css">
+      body{
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        width: 100vw;
+        height: 100vh;
+
+      .leaflet-popup-content {
+        min-width: 300px;
+      }
+      }
+    </style>
+
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+        const map = L.map('map', {
+            // washington state
+            center: [47.5, -121],
+            zoom: 7,
+            // attributionControl: false,
+        });
+
+        let globalLayer = null;
+
+        // https://stackoverflow.com/questions/19721439/download-json-object-as-a-file-from-browser
+        function downloadObjectAsJson(exportObj, exportName){
+            var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+            var downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href",     dataStr);
+            downloadAnchorNode.setAttribute("download", exportName + ".json");
+            document.body.appendChild(downloadAnchorNode); // required for firefox
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                downloadObjectAsJson(globalLayer.toGeoJSON(), "counties");
+            }
+        });
+
+
+
+
+        map.on('contextmenu',(e) => {
+            // 3 decimal places for latitude ~110m resolution
+            // longitude resolution is dependent on latitude. at 45°, 3 decimal places is ~79m
+            let lltext = `(${e.latlng.lat.toFixed(3)}, ${e.latlng.lng.toFixed(3)})`;
+            L.popup()
+            .setLatLng(e.latlng)
+            .setContent(lltext)
+            .openOn(map);
+        });
+
+        L.control.scale().addTo(map);
+        L.control.measure().addTo(map);
+        let legendControl = L.control.Legend({
+            position: "bottomleft",
+            collapsed: true,
+            legends: [],
+        }).addTo(map);
+
+        function jsonToTable(jdata) {
+            let table = '<table><tbody>'
+
+            let props = Object.keys(jdata);
+            props.forEach(prop => {
+                table += '<tr>';
+                table += `<th>${prop}</th>`;
+                table += `<td>${jdata[prop]}</td>`;
+                table += '</tr>';
+            });
+
+            table += '</tbody></table>'; return table;
+        }
+
+        function createStaticForm(feature) {
+            let content = '<form id="feature-form">' + 
+                `<h2>${feature.properties.NAME}, ${feature.properties.STUSPS}</h2>` +
+                '<label for="visit-type-max">Max visit type: </label>' +
+                '<span id="visit-type-max"></span><br>' +
+                '<label for="visit-year-first">First visit year: </label>' +
+                '<span id="visit-year-first"></span><br>' +
+                '<div id="visits"></div>';
+
+            content += '<button type="button" id="add-visit-button">Add visit</button>' +
+                '<button type="button" id="save-button">Save</button>' +
+            '</form>';
+            return content;
+        }
+
+        let yearColors = {
+            "2026": 'red',
+            "2025": 'orange',
+            "2024": 'yellow',
+            "2023": 'green',
+            "2022": 'blue',
+            "2021": 'indigo',
+            "2020": 'violet',
+        };
+        let typesLookup = {
+            "lived": "Lived (>1 month)",
+            "overnight": "Stayed overnight",
+            "visited": "Visited attraction",
+            "passed": "Passed through",
+            "tripA": "Trip A",
+            "tripB": "Trip B",
+            "tripC": "Trip C",
+        }
+        let typesSort = {
+            "lived": 17,
+            "overnight": 15,
+            "visited": 13,
+            "passed": 11,
+            "tripA": 9,
+            "tripB": 8,
+            "tripC": 7,
+        }
+        let typesColors = {
+            'lived': '#762a83',
+            'overnight': '#cc3333',
+            'visited': '#00441b',
+            'passed': '#4c91bf',
+            'tripA': '#ffff05',
+            'tripB': '#ff99ff',
+            'tripC': '#ff640a',
+        };
+
+        function updateProperties(layer) {
+            let props = layer.feature.properties;
+            props.visits = [];
+            let maxVisitType = null;
+            let firstVisitYear = null;
+            let visits = document.getElementById("visits");
+            for (let i = 0; i < visits.childElementCount; i++) {
+                let curr = visits.children[i];
+                let visitType = curr.querySelectorAll('.visit-type-input')[0].value;
+                let visitYear = curr.querySelectorAll('.visit-year-input')[0].value;
+                let visitNotes = curr.querySelectorAll('.visit-notes-input')[0].value;
+                if (visitType || visitYear || visitNotes) {
+                    if (!maxVisitType || typesSort[visitType] > typesSort[maxVisitType]) { maxVisitType = visitType; }
+                    if (!firstVisitYear || visitYear < firstVisitYear) { firstVisitYear = visitYear; }
+                    props.visits.push({
+                        type: visitType,
+                        year: visitYear,
+                        notes: visitNotes,
+                    });
+                }
+            }
+            props.maxVisitType = maxVisitType;
+            props.firstVisitYear = firstVisitYear;
+            console.log("New properties: ", layer.feature.properties);
+        }
+
+        function addVisit(vdiv) {
+            let curr = L.DomUtil.create("div", "", vdiv);
+            L.DomEvent.disableClickPropagation(curr);
+            let vyear = L.DomUtil.create("select", "visit-year-input", curr);
+            let opt = null;
+            opt = L.DomUtil.create("option", "", vyear); opt.value = ""; opt.innerText = "";
+            for (let [key, val] of Object.entries(yearColors)) {
+                opt = L.DomUtil.create("option", "", vyear); opt.value = key; opt.innerText = key;
+            }
+
+            let vtype = L.DomUtil.create("select", "visit-type-input", curr);
+            opt = L.DomUtil.create("option", "", vtype); opt.value = ""; opt.innerText = "";
+            for (let [key, val] of Object.entries(typesLookup)) {
+                opt = L.DomUtil.create("option", "", vtype); opt.value = key; opt.innerText = val;
+            }
+
+            let vnotes = L.DomUtil.create("input", "visit-notes-input", curr);
+            vnotes.type = "text";
+
+            let vdel = L.DomUtil.create("button", "", curr);
+            vdel.type = "button";
+            vdel.innerText = "X";
+            vdel.onclick = function() {
+                this.parentNode.remove();
+            };
+            /*
+            L.DomEvent.on(vdel, 'click', function() {
+                console.log(this.parentNode);
+                this.parentNode.remove();
+            });
+            */
+
+            return {"year": vyear, "type": vtype, "notes": vnotes};
+        }
+
+        function countyEachFeature(feature, layer) {
+            var content = createStaticForm(feature);
+            layer.bindPopup(content);
+            layer.on('popupopen', function(e) {
+                let props = e.popup._source.feature.properties;
+                let maxsp = document.getElementById("visit-type-max");
+                maxsp.innerText = props.maxVisitType || '';
+                let firstsp = document.getElementById("visit-year-first");
+                firstsp.innerText = props.firstVisitYear || '';
+                let vdiv = document.getElementById("visits");
+
+                if (props.visits) {
+                    for (let i = 0; i < props.visits.length; i++) {
+                        let row = addVisit(vdiv);
+                        row.year.value = props.visits[i].year;
+                        row.type.value = props.visits[i].type;
+                        row.notes.value = props.visits[i].notes;
+                    }
+                }
+
+                let addButton = document.getElementById('add-visit-button');
+                L.DomEvent.on(addButton, 'click', function() {
+                    addVisit(vdiv);
+                });
+
+                let saveButton = document.getElementById('save-button');
+                L.DomEvent.on(saveButton, 'click', function() {
+                    updateProperties(layer);
+                    // e.popup._source.closePopup();
+                    layer.closePopup();
+                    globalLayer.resetStyle(layer);
+                });
+            });
+        }
+
+        async function addGeojsonFileToControls(fileName, layerName, pathStyle, pointStyle, layerControl, onByDefault, legendControl) {
+            let mygeo = await fetch(fileName).then(resp => resp.json());
+            let mylayer = globalLayer = L.geoJson(mygeo, {
+                onEachFeature: countyEachFeature, // popup
+                style: pathStyle, // lines + polygons
+                pointToLayer: pointStyle // points
+            });
+
+            if (layerControl) {
+                layerControl.addOverlay(mylayer, layerName);
+            }
+            if (onByDefault) {
+                mylayer.addTo(map);
+            }
+            if (legendControl && pathStyle) {
+                let legend = {label: layerName, layers: [mylayer], type: "polygon", sides: 4, fillColor: pathStyle['fillColor'], color: pathStyle['color'], weight: pathStyle['weight'], opacity: pathStyle['opacity'], fillOpacity: pathStyle['fillOpacity']}
+                legendControl.addLegend(legend);
+            } 
+        }
+
+        const baseMaps = {
+            StreetView: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',   {maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}),
+            TopoView: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',   {maxZoom: 17, attribution: 'Kartendaten: © OpenStreetMap-Mitwirkende, SRTM | Kartendarstellung: © OpenTopoMap (CC-BY-SA)'}),
+            USGS_USTopo: L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', {maxZoom: 20, attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'}),
+            USGS_USImageryTopo: L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}', {maxZoom: 20, attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'}),
+            Stadia_AlidadeSatellite: L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}', {minZoom: 0, maxZoom: 20, attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', ext: 'jpg'}),
+            Esri_WorldImagery: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'}),
+            Esri_WorldTopoMap: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'}),
+
+            // VectorTileServer
+            USFS_FSTopo: L.esri.Vector.vectorTileLayer('2e1593463c30495e9c802098527e3d1b'),
+            // WADNR_RAT: L.esri.Vector.vectorTileLayer('c9130b8beb7345e68eee98522e0c0acc'),
+        };
+
+        var layerControl = L.control.layers(baseMaps, undefined, {collapsed: true}).addTo(map);
+        // default
+        baseMaps.StreetView.addTo(map);
+
+
+
+        //
+        // lines
+        //
+
+
+
+        //
+        // polygons
+        //
+
+
+        let visitTypeStyle = function(feature) {
+            let fillColors = typesColors;
+            let visitType = feature['properties']['maxVisitType'];
+            let fc = null;
+            let fo = null;
+            if (visitType) {
+                fc = fillColors[visitType];
+                fo = 0.5;
+
+            } else {
+                fc = '#3f3f3f';
+                fo = 0.2;
+            }
+
+            return {
+                'fillColor': fc,
+                'color': '#000000',
+                'weight': 1,
+                'opacity': 1,
+                'fillOpacity': fo,
+            };
+        }
+
+        let visitYearStyle = function(feature) {
+            let fillColors = yearColors;
+            let visitYear = feature['properties']['firstVisitYear'];
+            let fc = null;
+            let fo = null;
+            if (visitYear) {
+                fc = fillColors[visitYear];
+                fo = 0.5;
+            } else {
+                fc = '#3f3f3f';
+                fo = 0.2;
+            }
+
+            return {
+                'fillColor': fc,
+                'color': '#000000',
+                'weight': 1,
+                'opacity': 1,
+                'fillOpacity': fo,
+            };
+        }
+
+        let fileControl = L.Control.fileLayerLoad({
+            // Allows you to use a customized version of L.geoJson.
+            // For example if you are using the Proj4Leaflet leaflet plugin,
+            // you can pass L.Proj.geoJson and load the files into the
+            // L.Proj.GeoJson instead of the L.geoJson.
+            // layer: L.geoJson,
+            // See http://leafletjs.com/reference.html#geojson-options
+            layerOptions: {
+                onEachFeature: countyEachFeature, // popup
+                style: visitTypeStyle, // lines + polygons
+            },
+            // Add to map after loading (default: true) ?
+            addToMap: true,
+            // File size limit in kb (default: 1024) ?
+            fileSizeLimit: 1024*10,
+            // Restrict accepted file formats (default: .geojson, .json, .kml, and .gpx) ?
+            formats: [
+                '.geojson',
+            ]
+        }).addTo(map);
+        fileControl.loader.on('data:loaded', function(e) {
+            globalLayer = e.layer;
+        });
+
+        // addGeojsonFileToControls('../shared/nonuniqueID-geojson/counties2.geojson', 'counties', visitTypeStyle, undefined, layerControl, true, legendControl);
+        // addGeojsonFileToControls('../shared/nonuniqueID-geojson/my_counties.geojson', 'counties', visitYearStyle, undefined, layerControl, true, legendControl);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'c') {
+                e.preventDefault();
+                globalLayer.setStyle(visitYearStyle);
+                globalLayer.options.style = visitYearStyle; // needed for resetStyle to work on individual features
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'v') {
+                e.preventDefault();
+                globalLayer.setStyle(visitTypeStyle);
+                globalLayer.options.style = visitTypeStyle; // needed for resetStyle to work on individual features
+            }
+        });
+
+
+        //
+        // points
+        //
+
+
+
+    </script>
+  </body>
+</html>
+
