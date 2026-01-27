@@ -350,6 +350,29 @@
         addGeojsonFileToControls('uniqueID-geojson/grw-areas.geojson', 'green-watershed-areas', wshedAreaStyle, undefined, layerControl, true, legendControl);
         */
 
+        let gmuStyle = function(feature) {
+            let fc = '#000000';
+            let c = '#000000';
+            switch (feature.properties.GMU_Num) {
+                case 485:
+                    fc = '#ff0000';
+                    c = '#7f0000';
+                    break;
+                case 466:
+                    fc = '#ffff00';
+                    c = '#7f7f00';
+                    break;
+            }
+            return {
+                'fillColor': fc,
+                'color': c,
+                'weight': 4,
+                'opacity': 1,
+                'fillOpacity': 0.4
+            };
+        }
+        addGeojsonFileToControls('../shared/nonuniqueID-geojson/gr-gmus.geojson', 'green-watershed-areas', gmuStyle, undefined, layerControl, true, legendControl);
+
         let crwStyle = {
             'fillColor': '#ff0000',
             'color': '#7f0000',
@@ -360,6 +383,7 @@
         // https://www.openstreetmap.org/way/577601007
         addGeojsonFileToControls('../shared/uniqueID-geojson/crw-area.geojson', 'cedar-watershed-areas', crwStyle, undefined, layerControl, true, legendControl);
 
+        /*
         goodStyle = {
             'fillColor': '#00ff00',
             'color': '#007f00',
@@ -370,7 +394,9 @@
         addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/federal.geojson', 'grw-federal', goodStyle, undefined, layerControl, true, legendControl);
         addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/state.geojson', 'grw-state', goodStyle, undefined, layerControl, true, legendControl);
         addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/local.geojson', 'grw-local', goodStyle, undefined, layerControl, true, legendControl);
+        */
 
+        /*
         maybeStyle = {
             'fillColor': '#ffff00',
             'color': '#7f7f00',
@@ -380,7 +406,9 @@
         };
         addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/corp.geojson', 'grw-corp', maybeStyle, undefined, layerControl, true, legendControl);
         addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/none.geojson', 'grw-none', maybeStyle, undefined, layerControl, true, legendControl);
+        */
 
+        /*
         badStyle = {
             'fillColor': '#ff9f00',
             'color': '#7f4f00',
@@ -391,6 +419,7 @@
         addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/tribe.geojson', 'grw-tribe', badStyle, undefined, layerControl, true, legendControl);
         addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/indiv.geojson', 'grw-indiv', badStyle, undefined, layerControl, true, legendControl);
         addGeojsonFileToControls('../shared/nonuniqueID-geojson/parcels/grw-access/watershed.geojson', 'grw-watershed', badStyle, undefined, layerControl, true, legendControl);
+        */
 
 
         regionStyle = {
