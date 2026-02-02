@@ -40,7 +40,7 @@
       }
       #map {
         width: 100vw;
-        height: 100vh;
+        height: 90vh;
 
       .leaflet-popup-content {
         min-width: 300px;
@@ -51,6 +51,8 @@
   </head>
   <body>
     <div id="map"></div>
+    <span>Latitude, Longitude: <input type="text" name="latlng" id="latlng"/></span>
+    <input type="button" onclick="zoomTo()" value="zoomTo"/>
     <script>
         const map = L.map('map', {
             // washington state
@@ -60,6 +62,19 @@
         });
 
         let globalLayer = null;
+
+        function zoomTo() {
+            var latlngtxt = document.getElementById("latlng").value.replace('(', '').replace(')', '').replace(' ', '');
+            let [lat, lng] = latlngtxt.split(',');
+            let ll = new L.LatLng(lat, lng);
+            map.panTo(ll);
+            
+            let lltext = `(${lat}, ${lng})`;
+            L.popup()
+            .setLatLng(ll)
+            .setContent(lltext)
+            .openOn(map);
+        } 
 
         // https://stackoverflow.com/questions/19721439/download-json-object-as-a-file-from-browser
         function downloadObjectAsJson(exportObj, exportName){
