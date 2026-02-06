@@ -64,8 +64,25 @@
         let globalLayer = null;
 
         function zoomTo() {
-            var latlngtxt = document.getElementById("latlng").value.replace('(', '').replace(')', '').replace(' ', '');
-            let [lat, lng] = latlngtxt.split(',');
+            var latlngtxt = document.getElementById("latlng").value;
+            let latlngnorm = latlngtxt.replace('(', '').replace(')', '').replaceAll(' ', '').replaceAll('°', '');
+            let [lat, lng] = latlngnorm.split(',');
+
+            lat = lat.replace('N', '');
+            if (lat.includes('S')) {
+                lat = lat.replace('S', '');
+                if (! lat.includes('-')) {
+                    lat = '-' + lat;
+                }
+            }
+            lng = lng.replace('E', '');
+            if (lng.includes('W')) {
+                lng = lng.replace('W', '');
+                if (! lng.includes('-')) {
+                    lng = '-' + lng;
+                }
+            }
+
             let ll = new L.LatLng(lat, lng);
             map.panTo(ll);
             
