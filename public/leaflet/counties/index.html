@@ -161,14 +161,59 @@
             return content;
         }
 
+        // https://colorbrewer2.org/#type=qualitative&scheme=Paired&n=12
+        /*
+        '#a6cee3',
+        '#1f78b4',
+        '#b2df8a',
+        '#33a02c',
+        '#fb9a99',
+        '#e31a1c',
+        '#fdbf6f',
+        '#ff7f00',
+        '#cab2d6',
+        '#6a3d9a',
+        '#ffff99',
+        '#b15928', UNUSED
+        */
+
         let yearColors = {
-            "2026": 'red',
-            "2025": 'orange',
-            "2024": 'yellow',
-            "2023": 'green',
-            "2022": 'blue',
-            "2021": 'indigo',
-            "2020": 'violet',
+            ".unk": '#a6cee3',
+            // recent, year-by-year
+            "2026": '#1f78b4',
+            "2025": '#b2df8a',
+            "2024": '#33a02c',
+            "2023": '#fb9a99',
+            // grad roadtrip
+            "2022": '#e31a1c',
+            // undergrad
+            "2021": '#fdbf6f',
+            "2020": '#fdbf6f',
+            "2019": '#fdbf6f',
+            // senior year hike
+            "2018": '#ff7f00',
+            // rest of highschool, scouts
+            "2017": '#cab2d6',
+            "2016": '#cab2d6',
+            "2015": '#cab2d6',
+            // middle school, early scouts
+            "2014": '#6a3d9a',
+            "2013": '#6a3d9a',
+            "2012": '#6a3d9a',
+            "2011": '#6a3d9a',
+            // young
+            "2010": '#ffff99',
+            "2009": '#ffff99',
+            "2008": '#ffff99',
+            "2007": '#ffff99',
+            "2006": '#ffff99',
+            "2005": '#ffff99',
+            "2004": '#ffff99',
+            "2003": '#ffff99',
+            "2002": '#ffff99',
+            "2001": '#ffff99',
+            "2000": '#ffff99',
+            "1999": '#ffff99',
         };
         let typesLookup = {
             "lived": "Lived (>1 month)",
