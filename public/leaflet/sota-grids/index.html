@@ -275,7 +275,12 @@
       const DEFAULT_SUMMITS_URL = "./summitslist_ALL-USA_2026-03-17.csv";
       const DEFAULT_GRIDS_URL = "./conus-maidenhead-4char.geojson";
       const ACTIVATOR_SUMMIT_INDEX = 2;
+      const ACTIVATOR_DATE_INDEX = 3;
+      const ACTIVATOR_TIME_INDEX = 4;
+      const CHASER_CALLSIGN_INDEX = 7;
       const CHASER_SUMMIT_INDEX = 8;
+      const CHASER_DATE_INDEX = 3;
+      const CHASER_TIME_INDEX = 4;
       const FIELD_LETTERS = "ABCDEFGHIJKLMNOPQR";
       const STATUS_ORDER = ["empty", "neveractivated", "activated", "chased", "both", "unstyled"];
       const STYLE_BY_STATUS = {
@@ -289,12 +294,18 @@
 
       const state = {
         summitToGrid: new Map(),
+        summitDetails: new Map(),
         validGrids: new Set(),
         gridsWithActivations: new Set(),
+        activatedSummits: new Set(),
+        chasedSummits: new Set(),
+        activationDetails: new Map(),
+        chaseDetails: new Map(),
         activatedGrids: new Set(),
         chasedGrids: new Set(),
         gridGeojson: null,
         gridLayer: null,
+        summitLayer: null,
       };
 
       const map = L.map("map", {
@@ -431,6 +442,17 @@
         return new Date(year, month - 1, day);
       }
 
+      function formatDisplayDate(rawValue) {
+        const date = parseSotaDate(rawValue);
+        if (!date) {
+          return rawValue;
+        }
+        const year = date.getFullYear();
+        const month = date.toLocaleString("en-US", {month: "short"});
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year} ${month} ${day}`;
+      }
+
       function summitIsCurrent(row, today) {
         const validFrom = parseSotaDate(row.ValidFrom);
         const validTo = parseSotaDate(row.ValidTo);
@@ -473,8 +495,13 @@
 
       function resetSummitState() {
         state.summitToGrid = new Map();
+        state.summitDetails = new Map();
         state.validGrids = new Set();
         state.gridsWithActivations = new Set();
+        state.activatedSummits = new Set();
+        state.chasedSummits = new Set();
+        state.activationDetails = new Map();
+        state.chaseDetails = new Map();
       }
 
       function loadSummitMasterFromText(text) {
@@ -498,6 +525,15 @@
 
           const gridName = maidenhead4FromLatLon(latitude, longitude);
           state.summitToGrid.set(summitCode, gridName);
+          state.summitDetails.set(summitCode, {
+            code: summitCode,
+            name: (row.SummitName || "").trim(),
+            association: (row.AssociationName || row.Association || "").trim(),
+            region: (row.RegionName || row.Region || "").trim(),
+            gridName,
+            latitude,
+            longitude,
+          });
           state.validGrids.add(gridName);
 
           const activationCount = Number.parseInt(row.ActivationCount || "0", 10);
@@ -509,28 +545,79 @@
         return loadedSummits;
       }
 
-      function loadLoggedSummitsFromText(text, summitIndex) {
-        const rows = parseCsv(text);
-        const summits = new Set();
-        for (const row of rows) {
-          if (row.length <= summitIndex) {
-            continue;
-          }
-          const summitCode = (row[summitIndex] || "").trim();
-          if (summitCode) {
-            summits.add(summitCode);
+      function parseLogTimestamp(rawDate, rawTime) {
+        if (!rawDate) {
+          return null;
+        }
+
+        const [day, month, year] = rawDate.split("/").map(Number);
+        if (!day || !month || !year) {
+          return null;
+        }
+
+        let hours = 0;
+        let minutes = 0;
+        const normalizedTime = String(rawTime || "").trim();
+        if (normalizedTime) {
+          if (normalizedTime.includes(":")) {
+            const [hourPart, minutePart] = normalizedTime.split(":").map(Number);
+            hours = Number.isFinite(hourPart) ? hourPart : 0;
+            minutes = Number.isFinite(minutePart) ? minutePart : 0;
+          } else {
+            const digitsOnly = normalizedTime.replaceAll(/\D/g, "");
+            if (digitsOnly.length >= 3) {
+              hours = Number(digitsOnly.slice(0, -2)) || 0;
+              minutes = Number(digitsOnly.slice(-2)) || 0;
+            }
           }
         }
-        return summits;
+
+        return new Date(year, month - 1, day, hours, minutes).getTime();
+      }
+
+      function loadLoggedSummitsFromText(text, options) {
+        const rows = parseCsv(text);
+        const summits = new Set();
+        const details = new Map();
+        for (const row of rows) {
+          if (row.length <= options.summitIndex) {
+            continue;
+          }
+          const summitCode = (row[options.summitIndex] || "").trim();
+          if (summitCode) {
+            summits.add(summitCode);
+
+            const timestamp = parseLogTimestamp(row[options.dateIndex], row[options.timeIndex]);
+            const existing = details.get(summitCode);
+            if (!existing || (timestamp !== null && (existing.timestamp === null || timestamp < existing.timestamp))) {
+              details.set(summitCode, {
+                date: (row[options.dateIndex] || "").trim(),
+                callsign: options.callsignIndex === undefined ? "" : (row[options.callsignIndex] || "").trim(),
+                timestamp,
+              });
+            }
+          }
+        }
+        return {summits, details};
       }
 
       function buildGridSetsFromLogs(activatorText, chaserText) {
+        state.activatedSummits = new Set();
+        state.chasedSummits = new Set();
+        state.activationDetails = new Map();
+        state.chaseDetails = new Map();
         state.activatedGrids = new Set();
         state.chasedGrids = new Set();
 
         if (activatorText) {
-          const activatedSummits = loadLoggedSummitsFromText(activatorText, ACTIVATOR_SUMMIT_INDEX);
-          for (const summitCode of activatedSummits) {
+          const activatorData = loadLoggedSummitsFromText(activatorText, {
+            summitIndex: ACTIVATOR_SUMMIT_INDEX,
+            dateIndex: ACTIVATOR_DATE_INDEX,
+            timeIndex: ACTIVATOR_TIME_INDEX,
+          });
+          state.activatedSummits = activatorData.summits;
+          state.activationDetails = activatorData.details;
+          for (const summitCode of state.activatedSummits) {
             if (state.summitToGrid.has(summitCode)) {
               state.activatedGrids.add(state.summitToGrid.get(summitCode));
             }
@@ -538,8 +625,15 @@
         }
 
         if (chaserText) {
-          const chasedSummits = loadLoggedSummitsFromText(chaserText, CHASER_SUMMIT_INDEX);
-          for (const summitCode of chasedSummits) {
+          const chaserData = loadLoggedSummitsFromText(chaserText, {
+            summitIndex: CHASER_SUMMIT_INDEX,
+            dateIndex: CHASER_DATE_INDEX,
+            timeIndex: CHASER_TIME_INDEX,
+            callsignIndex: CHASER_CALLSIGN_INDEX,
+          });
+          state.chasedSummits = chaserData.summits;
+          state.chaseDetails = chaserData.details;
+          for (const summitCode of state.chasedSummits) {
             if (state.summitToGrid.has(summitCode)) {
               state.chasedGrids.add(state.summitToGrid.get(summitCode));
             }
@@ -568,6 +662,21 @@
         return "unstyled";
       }
 
+      function classifySummit(summitCode) {
+        const activated = state.activatedSummits.has(summitCode);
+        const chased = state.chasedSummits.has(summitCode);
+        if (activated && chased) {
+          return "both";
+        }
+        if (activated) {
+          return "activated";
+        }
+        if (chased) {
+          return "chased";
+        }
+        return null;
+      }
+
       function popupHtmlForFeature(feature) {
         const properties = feature.properties || {};
         const rows = [];
@@ -584,6 +693,82 @@
           .replaceAll("<", "&lt;")
           .replaceAll(">", "&gt;")
           .replaceAll('"', "&quot;");
+      }
+
+      function popupHtmlForSummit(summit, status) {
+        const activationDetail = state.activationDetails.get(summit.code);
+        const chaseDetail = state.chaseDetails.get(summit.code);
+        const rows = [
+          `<tr><th>Status</th><td>${escapeHtml(status)}</td></tr>`,
+          `<tr><th>Summit</th><td>${escapeHtml(summit.code)}</td></tr>`,
+        ];
+        if (summit.name) {
+          rows.push(`<tr><th>Name</th><td>${escapeHtml(summit.name)}</td></tr>`);
+        }
+        rows.push(`<tr><th>Grid</th><td>${escapeHtml(summit.gridName)}</td></tr>`);
+        if (activationDetail?.date) {
+          rows.push(`<tr><th>First activated</th><td>${escapeHtml(formatDisplayDate(activationDetail.date))}</td></tr>`);
+        }
+        if (chaseDetail?.date) {
+          rows.push(`<tr><th>First chased</th><td>${escapeHtml(formatDisplayDate(chaseDetail.date))}</td></tr>`);
+        }
+        if (chaseDetail?.callsign) {
+          rows.push(`<tr><th>Callsign chased</th><td>${escapeHtml(chaseDetail.callsign)}</td></tr>`);
+        }
+        if (summit.association) {
+          rows.push(`<tr><th>Association</th><td>${escapeHtml(summit.association)}</td></tr>`);
+        }
+        if (summit.region) {
+          rows.push(`<tr><th>Region</th><td>${escapeHtml(summit.region)}</td></tr>`);
+        }
+        return `<table><tbody>${rows.join("")}</tbody></table>`;
+      }
+
+      function refreshSummitLayer() {
+        if (state.summitLayer) {
+          map.removeLayer(state.summitLayer);
+        }
+
+        const summitFeatures = [];
+        for (const summit of state.summitDetails.values()) {
+          const status = classifySummit(summit.code);
+          if (!status) {
+            continue;
+          }
+          summitFeatures.push({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [summit.longitude, summit.latitude],
+            },
+            properties: {
+              summitCode: summit.code,
+              summitName: summit.name,
+              grid: summit.gridName,
+              status,
+            },
+            __summitStatus: status,
+            __summitData: summit,
+          });
+        }
+
+        state.summitLayer = L.geoJSON({type: "FeatureCollection", features: summitFeatures}, {
+          pointToLayer: (feature, latlng) => {
+            const status = feature.__summitStatus || "unstyled";
+            const style = STYLE_BY_STATUS[status] || STYLE_BY_STATUS.unstyled;
+            return L.circleMarker(latlng, {
+              radius: 5,
+              color: style.color,
+              weight: 2,
+              opacity: 1,
+              fillColor: style.fillColor,
+              fillOpacity: 0.95,
+            });
+          },
+          onEachFeature: (feature, layer) => {
+            layer.bindPopup(() => popupHtmlForSummit(feature.__summitData, feature.__summitStatus || "unstyled"));
+          },
+        }).addTo(map);
       }
 
       function refreshGridLayer() {
@@ -622,6 +807,7 @@
           map.fitBounds(state.gridLayer.getBounds(), {padding: [10, 10]});
         }
 
+        refreshSummitLayer();
         updateSummary(counts);
       }
 
@@ -705,6 +891,8 @@
       function clearUserLogs() {
         activatorInput.value = "";
         chaserInput.value = "";
+        state.activatedSummits = new Set();
+        state.chasedSummits = new Set();
         state.activatedGrids = new Set();
         state.chasedGrids = new Set();
         refreshGridLayer();
