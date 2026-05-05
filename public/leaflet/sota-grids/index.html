@@ -84,6 +84,29 @@
         margin: 12px 0;
       }
 
+      .source-mode-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 8px 0 10px;
+      }
+
+      .source-mode-group label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        font-weight: 500;
+      }
+
+      .source-input {
+        margin-top: 8px;
+      }
+
+      .source-input[hidden] {
+        display: none;
+      }
+
       .field-group label {
         display: block;
         margin-bottom: 4px;
@@ -101,6 +124,12 @@
         border: 1px solid #c7d0db;
         border-radius: 10px;
         font-size: 0.92rem;
+      }
+
+      .field-group input[type="url"]:disabled {
+        background: #e9eef4;
+        color: #6b7280;
+        cursor: not-allowed;
       }
 
       .button-row {
@@ -222,19 +251,43 @@
 
       <div class="field-group">
         <label for="activator-file">Activator CSV</label>
-        <input id="activator-file" type="file" accept=".csv,text/csv">
-        <input id="activator-url" type="url" placeholder="https://example.com/activator.csv" aria-label="Activator CSV URL">
+        <div class="source-mode-group" role="radiogroup" aria-label="Activator CSV source">
+          <label><input type="radio" name="activator-source" value="upload" checked>Upload</label>
+          <label><input type="radio" name="activator-source" value="url">URL</label>
+          <label><input type="radio" name="activator-source" value="example">Example</label>
+        </div>
+        <div id="activator-upload-source" class="source-input">
+          <input id="activator-file" type="file" accept=".csv,text/csv">
+        </div>
+        <div id="activator-url-source" class="source-input" hidden>
+          <input id="activator-url" type="url" placeholder="https://example.com/activator.csv" aria-label="Activator CSV URL">
+        </div>
+        <div id="activator-example-source" class="source-input muted" hidden>
+          Example uses sibling file <code>KK7LHY_activator_20260501.csv</code>.
+        </div>
       </div>
 
       <div class="field-group">
         <label for="chaser-file">Chaser CSV</label>
-        <input id="chaser-file" type="file" accept=".csv,text/csv">
-        <input id="chaser-url" type="url" placeholder="https://example.com/chaser.csv" aria-label="Chaser CSV URL">
+        <div class="source-mode-group" role="radiogroup" aria-label="Chaser CSV source">
+          <label><input type="radio" name="chaser-source" value="upload" checked>Upload</label>
+          <label><input type="radio" name="chaser-source" value="url">URL</label>
+          <label><input type="radio" name="chaser-source" value="example">Example</label>
+        </div>
+        <div id="chaser-upload-source" class="source-input">
+          <input id="chaser-file" type="file" accept=".csv,text/csv">
+        </div>
+        <div id="chaser-url-source" class="source-input" hidden>
+          <input id="chaser-url" type="url" placeholder="https://example.com/chaser.csv" aria-label="Chaser CSV URL">
+        </div>
+        <div id="chaser-example-source" class="source-input muted" hidden>
+          Example uses sibling file <code>KK7LHY_chaser_20260501.csv</code>.
+        </div>
       </div>
 
       <div class="button-row">
-        <button id="reload-defaults" class="primary" type="button">Reload Default Data</button>
-        <button id="apply-user-data" type="button">Apply Uploaded Logs</button>
+        <button id="apply-user-data" class="primary" type="button">Apply Logs</button>
+        <button id="reload-defaults" type="button">Reload Default Data</button>
         <button id="clear-user-data" type="button">Clear Uploaded Logs</button>
       </div>
 
@@ -365,10 +418,36 @@
       const statusBox = document.getElementById("status-box");
       const activatorInput = document.getElementById("activator-file");
       const activatorUrlInput = document.getElementById("activator-url");
+      const activatorSourceInputs = document.querySelectorAll('input[name="activator-source"]');
       const chaserInput = document.getElementById("chaser-file");
       const chaserUrlInput = document.getElementById("chaser-url");
+      const chaserSourceInputs = document.querySelectorAll('input[name="chaser-source"]');
       const summitsInput = document.getElementById("summits-file");
       const gridsInput = document.getElementById("grids-file");
+
+      function defaultSiblingUrl(fileName) {
+        return new URL(fileName, window.location.href).toString();
+      }
+
+      function selectedSourceMode(name) {
+        return document.querySelector(`input[name="${name}"]:checked`)?.value || "upload";
+      }
+
+      function syncSourceMode(name, fileInput, urlInput, exampleFileName) {
+        const mode = selectedSourceMode(name);
+        document.getElementById(`${name.replace("-source", "")}-upload-source`).hidden = mode !== "upload";
+        document.getElementById(`${name.replace("-source", "")}-url-source`).hidden = mode !== "url";
+        document.getElementById(`${name.replace("-source", "")}-example-source`).hidden = mode !== "example";
+
+        urlInput.disabled = mode !== "url";
+      }
+
+      function syncLogSourceInputs() {
+        syncSourceMode("activator-source", activatorInput, activatorUrlInput, "KK7LHY_activator_20260501.csv");
+        syncSourceMode("chaser-source", chaserInput, chaserUrlInput, "KK7LHY_chaser_20260501.csv");
+      }
+
+      syncLogSourceInputs();
 
       function setStatus(message, isError = false) {
         statusBox.textContent = message;
@@ -828,11 +907,23 @@
         return await file.text();
       }
 
-      async function readOptionalLogSource(fileInput, urlInput, label) {
-        if (fileInput.files[0]) {
+      async function readOptionalLogSource(modeName, fileInput, urlInput, label, exampleFileName) {
+        const mode = selectedSourceMode(modeName);
+
+        if (mode === "upload") {
+          if (!fileInput.files[0]) {
+            return {text: null, sourceLabel: null};
+          }
           return {
             text: await readFileAsText(fileInput.files[0]),
             sourceLabel: `${label} file`,
+          };
+        }
+
+        if (mode === "example") {
+          return {
+            text: await fetchText(defaultSiblingUrl(exampleFileName)),
+            sourceLabel: `${label} example`,
           };
         }
 
@@ -892,8 +983,20 @@
         }
 
         try {
-          const activatorSource = await readOptionalLogSource(activatorInput, activatorUrlInput, "activator CSV");
-          const chaserSource = await readOptionalLogSource(chaserInput, chaserUrlInput, "chaser CSV");
+          const activatorSource = await readOptionalLogSource(
+            "activator-source",
+            activatorInput,
+            activatorUrlInput,
+            "activator CSV",
+            "KK7LHY_activator_20260501.csv"
+          );
+          const chaserSource = await readOptionalLogSource(
+            "chaser-source",
+            chaserInput,
+            chaserUrlInput,
+            "chaser CSV",
+            "KK7LHY_chaser_20260501.csv"
+          );
 
           buildGridSetsFromLogs(activatorSource.text, chaserSource.text);
           refreshGridLayer();
@@ -933,10 +1036,13 @@
         activatorUrlInput.value = "";
         chaserInput.value = "";
         chaserUrlInput.value = "";
+        document.querySelector('input[name="activator-source"][value="upload"]').checked = true;
+        document.querySelector('input[name="chaser-source"][value="upload"]').checked = true;
         state.activatedSummits = new Set();
         state.chasedSummits = new Set();
         state.activatedGrids = new Set();
         state.chasedGrids = new Set();
+        syncLogSourceInputs();
         refreshGridLayer();
         setStatus("Cleared uploaded activator and chaser logs.");
       }
@@ -955,6 +1061,8 @@
         await applyUserLogs();
       });
 
+      activatorSourceInputs.forEach((input) => input.addEventListener("change", syncLogSourceInputs));
+      chaserSourceInputs.forEach((input) => input.addEventListener("change", syncLogSourceInputs));
       document.getElementById("clear-user-data").addEventListener("click", clearUserLogs);
 
       Promise.resolve().then(loadDefaults);
