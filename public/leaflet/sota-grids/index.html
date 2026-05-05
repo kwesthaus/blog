@@ -294,10 +294,10 @@
       <details>
         <summary>Manual Base-File Fallback</summary>
         <p class="muted">
-          If the browser blocks automatic loading from sibling files, choose the summit master CSV and grid GeoJSON manually here.
+          If the browser blocks automatic loading from sibling files, choose the summitslist CSV and grid GeoJSON manually here.
         </p>
         <div class="field-group">
-          <label for="summits-file">Summit Master CSV</label>
+          <label for="summits-file">Summitslist CSV</label>
           <input id="summits-file" type="file" accept=".csv,text/csv">
         </div>
         <div class="field-group">
@@ -653,7 +653,7 @@
         state.chaseDetails = new Map();
       }
 
-      function loadSummitMasterFromText(text) {
+      function loadSummitslistFromText(text) {
         resetSummitState();
         const rows = rowsToObjects(parseCsv(text));
         const today = new Date();
@@ -1023,7 +1023,7 @@
             fetchText(DEFAULT_SUMMITS_URL),
             fetchText(DEFAULT_GRIDS_URL),
           ]);
-          const loadedSummits = loadSummitMasterFromText(summitsText);
+          const loadedSummits = loadSummitslistFromText(summitsText);
           await loadGridGeojsonFromText(gridsText);
           buildGridSetsFromLogs(null, null);
           refreshGridLayer();
@@ -1035,7 +1035,7 @@
 
       async function applyUserLogs() {
         if (!state.gridGeojson || state.summitToGrid.size === 0) {
-          setStatus("Load the summit master CSV and grid GeoJSON first.", true);
+          setStatus("Load the summitslist CSV and grid GeoJSON first.", true);
           return;
         }
 
@@ -1079,7 +1079,7 @@
             readFileAsText(summitsInput.files[0]),
             readFileAsText(gridsInput.files[0]),
           ]);
-          const loadedSummits = loadSummitMasterFromText(summitsText);
+          const loadedSummits = loadSummitslistFromText(summitsText);
           await loadGridGeojsonFromText(gridsText);
           buildGridSetsFromLogs(null, null);
           refreshGridLayer();
