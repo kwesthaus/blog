@@ -94,6 +94,15 @@
         width: 100%;
       }
 
+      .field-group input[type="url"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 10px;
+        border: 1px solid #c7d0db;
+        border-radius: 10px;
+        font-size: 0.92rem;
+      }
+
       .button-row {
         display: flex;
         flex-wrap: wrap;
@@ -214,11 +223,13 @@
       <div class="field-group">
         <label for="activator-file">Activator CSV</label>
         <input id="activator-file" type="file" accept=".csv,text/csv">
+        <input id="activator-url" type="url" placeholder="https://example.com/activator.csv" aria-label="Activator CSV URL">
       </div>
 
       <div class="field-group">
         <label for="chaser-file">Chaser CSV</label>
         <input id="chaser-file" type="file" accept=".csv,text/csv">
+        <input id="chaser-url" type="url" placeholder="https://example.com/chaser.csv" aria-label="Chaser CSV URL">
       </div>
 
       <div class="button-row">
@@ -353,7 +364,9 @@
 
       const statusBox = document.getElementById("status-box");
       const activatorInput = document.getElementById("activator-file");
+      const activatorUrlInput = document.getElementById("activator-url");
       const chaserInput = document.getElementById("chaser-file");
+      const chaserUrlInput = document.getElementById("chaser-url");
       const summitsInput = document.getElementById("summits-file");
       const gridsInput = document.getElementById("grids-file");
 
@@ -815,6 +828,29 @@
         return await file.text();
       }
 
+      async function readOptionalLogSource(fileInput, urlInput, label) {
+        if (fileInput.files[0]) {
+          return {
+            text: await readFileAsText(fileInput.files[0]),
+            sourceLabel: `${label} file`,
+          };
+        }
+
+        const url = urlInput.value.trim();
+        if (!url) {
+          return {text: null, sourceLabel: null};
+        }
+
+        try {
+          return {
+            text: await fetchText(url),
+            sourceLabel: `${label} URL`,
+          };
+        } catch (error) {
+          throw new Error(`Failed to fetch ${label} URL: ${error.message}. Check that the URL is correct and allows cross-origin requests.`);
+        }
+      }
+
       async function loadGridGeojsonFromText(text) {
         state.gridGeojson = JSON.parse(text);
       }
@@ -855,16 +891,20 @@
           return;
         }
 
-        const activatorText = activatorInput.files[0] ? await readFileAsText(activatorInput.files[0]) : null;
-        const chaserText = chaserInput.files[0] ? await readFileAsText(chaserInput.files[0]) : null;
-        buildGridSetsFromLogs(activatorText, chaserText);
-        refreshGridLayer();
+        try {
+          const activatorSource = await readOptionalLogSource(activatorInput, activatorUrlInput, "activator CSV");
+          const chaserSource = await readOptionalLogSource(chaserInput, chaserUrlInput, "chaser CSV");
 
-        const sourceSummary = [
-          activatorText ? "activator CSV" : null,
-          chaserText ? "chaser CSV" : null,
-        ].filter(Boolean).join(" and ");
-        setStatus(sourceSummary ? `Applied ${sourceSummary}.` : "No activator or chaser CSV selected; showing base classification only.");
+          buildGridSetsFromLogs(activatorSource.text, chaserSource.text);
+          refreshGridLayer();
+
+          const sourceSummary = [activatorSource.sourceLabel, chaserSource.sourceLabel]
+            .filter(Boolean)
+            .join(" and ");
+          setStatus(sourceSummary ? `Applied ${sourceSummary}.` : "No activator or chaser CSV selected; showing base classification only.");
+        } catch (error) {
+          setStatus(error.message, true);
+        }
       }
 
       async function applyManualBaseFiles() {
@@ -890,7 +930,9 @@
 
       function clearUserLogs() {
         activatorInput.value = "";
+        activatorUrlInput.value = "";
         chaserInput.value = "";
+        chaserUrlInput.value = "";
         state.activatedSummits = new Set();
         state.chasedSummits = new Set();
         state.activatedGrids = new Set();
