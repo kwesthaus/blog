@@ -509,6 +509,63 @@
         return rows;
       }
 
+      function looksLikeSummitCode(value) {
+        return /^[A-Z0-9]{1,4}\/[A-Z]{2,3}-\d{2,3}$/i.test((value || "").trim());
+      }
+
+      function detectLogFormat(text) {
+        const rows = parseCsv(text)
+          .filter((row) => row.length > 0)
+          .slice(0, 25);
+
+        if (!rows.length) {
+          return "unknown";
+        }
+
+        let activatorMatches = 0;
+        let chaserMatches = 0;
+        for (const row of rows) {
+          if (looksLikeSummitCode(row[ACTIVATOR_SUMMIT_INDEX])) {
+            activatorMatches += 1;
+          }
+          if (looksLikeSummitCode(row[CHASER_SUMMIT_INDEX])) {
+            chaserMatches += 1;
+          }
+        }
+
+        if (activatorMatches > 0 && chaserMatches === 0) {
+          return "activator";
+        }
+        if (chaserMatches > 0 && activatorMatches === 0) {
+          return "chaser";
+        }
+        if (activatorMatches > chaserMatches * 2) {
+          return "activator";
+        }
+        if (chaserMatches > activatorMatches * 2) {
+          return "chaser";
+        }
+        return "unknown";
+      }
+
+      function validateLogFormat(text, expectedFormat, label) {
+        if (!text) {
+          return;
+        }
+
+        const detectedFormat = detectLogFormat(text);
+        if (detectedFormat === "unknown" || detectedFormat === expectedFormat) {
+          return;
+        }
+
+        if (expectedFormat === "activator" && detectedFormat === "chaser") {
+          throw new Error(`The ${label} looks like a chaser CSV, not an activator CSV. Check whether the activator and chaser inputs were swapped.`);
+        }
+        if (expectedFormat === "chaser" && detectedFormat === "activator") {
+          throw new Error(`The ${label} looks like an activator CSV, not a chaser CSV. Check whether the activator and chaser inputs were swapped.`);
+        }
+      }
+
       function rowsToObjects(rows) {
         if (!rows.length) {
           return [];
@@ -997,6 +1054,9 @@
             "chaser CSV",
             "KK7LHY_chaser_20260501.csv"
           );
+
+          validateLogFormat(activatorSource.text, "activator", activatorSource.sourceLabel || "activator CSV");
+          validateLogFormat(chaserSource.text, "chaser", chaserSource.sourceLabel || "chaser CSV");
 
           buildGridSetsFromLogs(activatorSource.text, chaserSource.text);
           refreshGridLayer();
