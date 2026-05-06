@@ -15,6 +15,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
+    <script src="https://unpkg.com/@turf/turf@7.2.0/turf.min.js"></script>
     <script src="https://unpkg.com/esri-leaflet@3.0.19/dist/esri-leaflet.js" crossorigin=""></script>
     <script src="https://unpkg.com/esri-leaflet-vector@4.3.2/dist/esri-leaflet-vector.js" crossorigin=""></script>
     <style>
@@ -261,6 +262,112 @@
         white-space: nowrap;
       }
 
+      .match-popup {
+        min-width: 260px;
+      }
+
+      .match-popup h3 {
+        margin: 0 0 10px;
+        font-size: 0.95rem;
+      }
+
+      .match-popup-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .match-popup-item {
+        padding: 10px 12px;
+        border: 1px solid #dbe2ea;
+        border-radius: 10px;
+        background: #f8fafc;
+      }
+
+      .match-popup-list li + li {
+        margin-top: 10px;
+      }
+
+      .match-popup-topline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .match-popup-id {
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: 0.01em;
+      }
+
+      .match-popup-status {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border: 1px solid transparent;
+      }
+
+      .match-popup-status.empty {
+        background: rgba(192, 0, 0, 0.12);
+        color: #7b0000;
+        border-color: rgba(192, 0, 0, 0.2);
+      }
+
+      .match-popup-status.neveractivated {
+        background: rgba(255, 140, 0, 0.14);
+        color: #8a4c00;
+        border-color: rgba(255, 140, 0, 0.2);
+      }
+
+      .match-popup-status.activated {
+        background: rgba(192, 192, 0, 0.18);
+        color: #666000;
+        border-color: rgba(96, 96, 0, 0.2);
+      }
+
+      .match-popup-status.chased {
+        background: rgba(0, 0, 192, 0.12);
+        color: #00007b;
+        border-color: rgba(0, 0, 192, 0.18);
+      }
+
+      .match-popup-status.both {
+        background: rgba(0, 192, 0, 0.14);
+        color: #006100;
+        border-color: rgba(0, 192, 0, 0.18);
+      }
+
+      .match-popup-status.unstyled {
+        background: rgba(85, 85, 85, 0.12);
+        color: #333333;
+        border-color: rgba(85, 85, 85, 0.2);
+      }
+
+      .match-popup-name {
+        margin-bottom: 8px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .match-popup-row + .match-popup-row {
+        margin-top: 4px;
+      }
+
+      .match-popup-label {
+        display: inline-block;
+        min-width: 56px;
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+
       @media (max-width: 680px) {
         .control-panel {
           left: 10px;
@@ -414,7 +521,7 @@
         activated: {color: "#606000", weight: 1.6, opacity: 1, fillColor: "#c0c000", fillOpacity: 0.5},
         chased: {color: "#000060", weight: 1.6, opacity: 1, fillColor: "#0000c0", fillOpacity: 0.5},
         both: {color: "#006000", weight: 1.8, opacity: 1, fillColor: "#00c000", fillOpacity: 0.55},
-        unstyled: {color: "#7a8a99", weight: 1, opacity: 0.7, fillColor: "#ffffff", fillOpacity: 0.03},
+        unstyled: {color: "#555555", weight: 1, opacity: 1, fillColor: "#555555", fillOpacity: 0.5},
       };
 
       const state = {
@@ -430,6 +537,9 @@
         chasedContainers: new Set(),
         containerGeojson: null,
         containerLayer: null,
+        containerLayersById: new Map(),
+        hoveredContainerId: null,
+        highlightedContainerIds: new Set(),
         summitLayer: null,
       };
 
@@ -438,6 +548,8 @@
         zoom: 5,
         zoomControl: false,
       });
+      map.createPane("summitPane");
+      map.getPane("summitPane").style.zIndex = "650";
 
       const baseMaps = {
         StreetView: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -581,6 +693,48 @@
         return sotaEngine.classifySummit(summitCode, state);
       }
 
+      function baseStyleForContainer(feature) {
+        return {...(STYLE_BY_STATUS[feature.__containerStatus] || STYLE_BY_STATUS.unstyled)};
+      }
+
+      function containerStyleForDisplay(feature) {
+        const properties = feature.properties || {};
+        const identifier = properties.identifier || "";
+        const style = baseStyleForContainer(feature);
+
+        if (state.highlightedContainerIds.has(identifier)) {
+          return {
+            ...style,
+            color: "#111111",
+            weight: Math.max(style.weight + 1.4, 2.8),
+            opacity: 1,
+            fillOpacity: Math.min((style.fillOpacity ?? 0.4) + 0.15, 0.75),
+          };
+        }
+
+        if (state.hoveredContainerId === identifier) {
+          return {
+            ...style,
+            color: "#111111",
+            weight: Math.max(style.weight + 1, 2.4),
+            opacity: 1,
+            fillOpacity: Math.min((style.fillOpacity ?? 0.4) + 0.1, 0.7),
+          };
+        }
+
+        return style;
+      }
+
+      function applyContainerDisplayStyles() {
+        for (const [identifier, layer] of state.containerLayersById.entries()) {
+          const feature = layer.feature;
+          if (!feature || !identifier) {
+            continue;
+          }
+          layer.setStyle(containerStyleForDisplay(feature));
+        }
+      }
+
       function popupHtmlForFeature(feature) {
         const properties = feature.properties || {};
         const rows = [];
@@ -589,6 +743,39 @@
           rows.push(`<tr><th>${escapeHtml(key)}</th><td>${escapeHtml(String(value))}</td></tr>`);
         }
         return `<table><tbody>${rows.join("")}</tbody></table>`;
+      }
+
+      function popupHtmlForClickedRegions(features) {
+        const items = features.map((feature) => {
+          const properties = feature.properties || {};
+          const counties = Array.isArray(properties.counties) && properties.counties.length
+            ? properties.counties.join(", ")
+            : "None listed";
+          const status = feature.__containerStatus || classifyContainer(properties.identifier);
+          const statusLabel = status === "neveractivated"
+            ? "Never Activated"
+            : status.charAt(0).toUpperCase() + status.slice(1);
+          const parts = [
+            '<div class="match-popup-item">',
+            '<div class="match-popup-topline">',
+            `<div class="match-popup-id">${escapeHtml(properties.identifier || "")}</div>`,
+            `<div class="match-popup-status ${escapeHtml(status)}">${escapeHtml(statusLabel)}</div>`,
+            "</div>",
+          ];
+          if (properties.name) {
+            parts.push(`<div class="match-popup-name">${escapeHtml(properties.name)}</div>`);
+          }
+          parts.push(`<div class="match-popup-row"><span class="match-popup-label">Counties</span>${escapeHtml(counties)}</div>`);
+          parts.push("</div>");
+          return `<li>${parts.join("")}</li>`;
+        });
+
+        return [
+          '<div class="match-popup">',
+          `<h3>${features.length} region${features.length === 1 ? "" : "s"} at this point</h3>`,
+          `<ul class="match-popup-list">${items.join("")}</ul>`,
+          "</div>",
+        ].join("");
       }
 
       function popupHtmlForSummit(summit, status) {
@@ -653,7 +840,9 @@
             const status = feature.__summitStatus || "unstyled";
             const style = STYLE_BY_STATUS[status] || STYLE_BY_STATUS.unstyled;
             return L.circleMarker(latlng, {
+              pane: "summitPane",
               radius: 5,
+              bubblingMouseEvents: false,
               color: style.color,
               weight: 2,
               opacity: 1,
@@ -662,9 +851,75 @@
             });
           },
           onEachFeature: (feature, layer) => {
+            layer.on("add", () => {
+              const element = layer.getElement?.();
+              if (!element) {
+                return;
+              }
+              ["pointerdown", "mousedown", "touchstart"].forEach((eventName) => {
+                L.DomEvent.on(element, eventName, L.DomEvent.stop);
+              });
+            });
+            ["click", "mousedown", "mouseup", "dblclick", "contextmenu"].forEach((eventName) => {
+              layer.on(eventName, (event) => {
+                if (event.originalEvent) {
+                  L.DomEvent.stop(event.originalEvent);
+                }
+              });
+            });
             layer.bindPopup(() => popupHtmlForSummit(feature.__summitData, feature.__summitStatus || "unstyled"));
           },
         }).addTo(map);
+      }
+
+      function regionFeaturesAtLatLng(latlng) {
+        if (!state.containerGeojson || !window.turf) {
+          return [];
+        }
+
+        const clickPoint = window.turf.point([latlng.lng, latlng.lat]);
+        const matches = [];
+        for (const feature of state.containerGeojson.features || []) {
+          const geometryType = feature?.geometry?.type;
+          if (geometryType !== "Polygon" && geometryType !== "MultiPolygon") {
+            continue;
+          }
+          try {
+            if (!window.turf.booleanPointInPolygon(clickPoint, feature)) {
+              continue;
+            }
+          } catch (error) {
+            continue;
+          }
+
+          if (feature.properties?.identifier) {
+            matches.push(feature);
+          }
+        }
+        matches.sort((left, right) => {
+          const leftId = left.properties?.identifier || "";
+          const rightId = right.properties?.identifier || "";
+          return leftId.localeCompare(rightId);
+        });
+        return matches;
+      }
+
+      function showRegionsPopupAtLatLng(latlng) {
+        const matches = regionFeaturesAtLatLng(latlng);
+        if (!matches.length) {
+          state.highlightedContainerIds = new Set();
+          applyContainerDisplayStyles();
+          map.closePopup();
+          return;
+        }
+
+        state.highlightedContainerIds = new Set(matches.map((feature) => feature.properties?.identifier).filter(Boolean));
+        applyContainerDisplayStyles();
+
+        L.popup({maxWidth: 360})
+          .setLatLng(latlng)
+          .setContent(popupHtmlForClickedRegions(matches))
+          .openOn(map);
       }
 
       function refreshContainerLayer() {
@@ -692,10 +947,32 @@
           map.removeLayer(state.containerLayer);
         }
 
+        state.containerLayersById = new Map();
+        state.hoveredContainerId = null;
+        state.highlightedContainerIds = new Set();
+
         state.containerLayer = L.geoJSON(state.containerGeojson, {
-          style: (feature) => STYLE_BY_STATUS[feature.__containerStatus] || STYLE_BY_STATUS.unstyled,
+          style: (feature) => containerStyleForDisplay(feature),
           onEachFeature: (feature, layer) => {
-            layer.bindPopup(() => popupHtmlForFeature(feature));
+            const identifier = feature.properties?.identifier || "";
+            if (identifier) {
+              state.containerLayersById.set(identifier, layer);
+            }
+
+            layer.on("mouseover", () => {
+              state.hoveredContainerId = identifier || null;
+              applyContainerDisplayStyles();
+              if (typeof layer.bringToFront === "function") {
+                layer.bringToFront();
+              }
+            });
+
+            layer.on("mouseout", () => {
+              if (state.hoveredContainerId === identifier) {
+                state.hoveredContainerId = null;
+                applyContainerDisplayStyles();
+              }
+            });
           },
         }).addTo(map);
 
@@ -873,6 +1150,15 @@
       document.getElementById("clear-user-data").addEventListener("click", clearUserLogs);
       panelToggle.addEventListener("click", () => {
         setPanelCollapsed(!controlPanel.classList.contains("collapsed"));
+      });
+      map.on("click", (event) => {
+        showRegionsPopupAtLatLng(event.latlng);
+      });
+      map.on("popupclose", () => {
+        if (state.highlightedContainerIds.size > 0) {
+          state.highlightedContainerIds = new Set();
+          applyContainerDisplayStyles();
+        }
       });
 
       Promise.resolve().then(loadDefaults);
