@@ -63,6 +63,36 @@
         backdrop-filter: blur(6px);
       }
 
+      .control-panel.collapsed {
+        max-height: none;
+        overflow: visible;
+      }
+
+      .control-panel-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .control-panel-title {
+        min-width: 0;
+      }
+
+      .panel-toggle {
+        flex: 0 0 auto;
+        min-width: 44px;
+        padding-inline: 10px;
+      }
+
+      .control-panel-body {
+        margin-top: 10px;
+      }
+
+      .control-panel.collapsed .control-panel-body {
+        display: none;
+      }
+
       .control-panel h1 {
         margin: 0 0 6px;
         font-size: 1.2rem;
@@ -242,12 +272,19 @@
     </style>
   </head>
   <body>
-    <div class="control-panel">
-      <h1>SOTA Grid Color Explorer</h1>
-      <p class="muted">
-        Loads the summitslist CSV and CONUS grid GeoJSON, then recolors grids when you provide an activator CSV, chaser CSV, or both.
-        WARNING: AI GENERATED
-      </p>
+    <div class="control-panel" id="control-panel">
+      <div class="control-panel-header">
+        <div class="control-panel-title">
+          <h1>SOTA Grid Color Explorer</h1>
+          <p class="muted">
+            Loads the summitslist CSV and CONUS grid GeoJSON, then recolors grids when you provide an activator CSV, chaser CSV, or both.
+            WARNING: AI GENERATED
+          </p>
+        </div>
+        <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="true" aria-controls="control-panel-body">Hide</button>
+      </div>
+
+      <div id="control-panel-body" class="control-panel-body">
 
       <div class="field-group">
         <label for="activator-file">Activator CSV</label>
@@ -330,6 +367,7 @@
           <li><span>Both</span><span id="count-both">0</span></li>
           <li><span>Unstyled</span><span id="count-unstyled">0</span></li>
         </ul>
+      </div>
       </div>
     </div>
 
@@ -416,6 +454,8 @@
       L.control.scale().addTo(map);
 
       const statusBox = document.getElementById("status-box");
+      const controlPanel = document.getElementById("control-panel");
+      const panelToggle = document.getElementById("panel-toggle");
       const activatorInput = document.getElementById("activator-file");
       const activatorUrlInput = document.getElementById("activator-url");
       const activatorSourceInputs = document.querySelectorAll('input[name="activator-source"]');
@@ -445,6 +485,12 @@
       function syncLogSourceInputs() {
         syncSourceMode("activator-source", activatorInput, activatorUrlInput, "KK7LHY_activator_20260501.csv");
         syncSourceMode("chaser-source", chaserInput, chaserUrlInput, "KK7LHY_chaser_20260501.csv");
+      }
+
+      function setPanelCollapsed(collapsed) {
+        controlPanel.classList.toggle("collapsed", collapsed);
+        panelToggle.textContent = collapsed ? "Show" : "Hide";
+        panelToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
       }
 
       syncLogSourceInputs();
@@ -1124,6 +1170,9 @@
       activatorSourceInputs.forEach((input) => input.addEventListener("change", syncLogSourceInputs));
       chaserSourceInputs.forEach((input) => input.addEventListener("change", syncLogSourceInputs));
       document.getElementById("clear-user-data").addEventListener("click", clearUserLogs);
+      panelToggle.addEventListener("click", () => {
+        setPanelCollapsed(!controlPanel.classList.contains("collapsed"));
+      });
 
       Promise.resolve().then(loadDefaults);
     </script>
