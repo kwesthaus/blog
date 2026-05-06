@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SOTA Region Color Explorer</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    >
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/esri-leaflet@3.0.19/dist/esri-leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/esri-leaflet-vector@4.3.2/dist/esri-leaflet-vector.js" crossorigin=""></script>
+    <style>
+      :root {
+        --panel-bg: rgba(255, 255, 255, 0.96);
+        --panel-border: #c9d1d9;
+        --panel-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+        --text-main: #14213d;
+        --text-muted: #4f5d75;
+        --accent: #0a7ea4;
+        --empty: #c00000;
+        --neveractivated: #ff8c00;
+        --activated: #c0c000;
+        --chased: #0000c0;
+        --both: #00c000;
+        --unstyled: #d0d7de;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+        color: var(--text-main);
+        background: #eef3f8;
+      }
+
+      #map {
+        width: 100%;
+        height: 100%;
+      }
+
+      .control-panel {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        z-index: 1000;
+        width: min(360px, calc(100vw - 28px));
+        max-height: calc(100vh - 28px);
+        overflow: auto;
+        padding: 16px;
+        border: 1px solid var(--panel-border);
+        border-radius: 14px;
+        background: var(--panel-bg);
+        box-shadow: var(--panel-shadow);
+        backdrop-filter: blur(6px);
+      }
+
+      .control-panel.collapsed {
+        max-height: none;
+        overflow: visible;
+      }
+
+      .control-panel-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .control-panel-title {
+        min-width: 0;
+      }
+
+      .panel-toggle {
+        flex: 0 0 auto;
+        min-width: 44px;
+        padding-inline: 10px;
+      }
+
+      .control-panel-body {
+        margin-top: 10px;
+      }
+
+      .control-panel.collapsed .control-panel-body {
+        display: none;
+      }
+
+      .control-panel h1 {
+        margin: 0 0 6px;
+        font-size: 1.2rem;
+      }
+
+      .control-panel p,
+      .control-panel li,
+      .status-box,
+      .summary-box {
+        font-size: 0.92rem;
+        line-height: 1.4;
+      }
+
+      .muted {
+        color: var(--text-muted);
+      }
+
+      .field-group {
+        margin: 12px 0;
+      }
+
+      .source-mode-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 8px 0 10px;
+      }
+
+      .source-mode-group label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        font-weight: 500;
+      }
+
+      .source-input {
+        margin-top: 8px;
+      }
+
+      .source-input[hidden] {
+        display: none;
+      }
+
+      .field-group label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+
+      .field-group input[type="file"] {
+        width: 100%;
+      }
+
+      .field-group input[type="url"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 10px;
+        border: 1px solid #c7d0db;
+        border-radius: 10px;
+        font-size: 0.92rem;
+      }
+
+      .field-group input[type="url"]:disabled {
+        background: #e9eef4;
+        color: #6b7280;
+        cursor: not-allowed;
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      button {
+        border: 1px solid #98a2b3;
+        border-radius: 10px;
+        background: white;
+        color: var(--text-main);
+        padding: 8px 12px;
+        font-size: 0.92rem;
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: #0f6f8c;
+        background: var(--accent);
+        color: white;
+      }
+
+      button:hover {
+        filter: brightness(0.98);
+      }
+
+      details {
+        margin-top: 12px;
+      }
+
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .status-box,
+      .summary-box,
+      .legend-box {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #f8fafc;
+        border: 1px solid #dbe2ea;
+      }
+
+      .status-box.error {
+        background: #fff3f2;
+        border-color: #f5c2c0;
+      }
+
+      .legend-list,
+      .summary-list {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .legend-list li,
+      .summary-list li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 6px 0;
+      }
+
+      .legend-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        flex: 0 0 auto;
+      }
+
+      .leaflet-popup-content table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      .leaflet-popup-content th,
+      .leaflet-popup-content td {
+        padding: 4px 6px;
+        border-bottom: 1px solid #e6ebf1;
+        text-align: left;
+        vertical-align: top;
+        font-size: 0.85rem;
+      }
+
+      .leaflet-popup-content th {
+        white-space: nowrap;
+      }
+
+      @media (max-width: 680px) {
+        .control-panel {
+          left: 10px;
+          right: 10px;
+          width: auto;
+          max-height: 48vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="control-panel" id="control-panel">
+      <div class="control-panel-header">
+        <div class="control-panel-title">
+          <h1>SOTA Region Color Explorer</h1>
+          <p class="muted">
+            Loads the summitslist CSV and SOTA region GeoJSON, then recolors regions when you provide an activator CSV,
+            chaser CSV, or both. WARNING: AI GENERATED
+          </p>
+        </div>
+        <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="true" aria-controls="control-panel-body">Hide</button>
+      </div>
+
+      <div id="control-panel-body" class="control-panel-body">
+
+      <div class="field-group">
+        <label for="activator-file">Activator CSV</label>
+        <div class="source-mode-group" role="radiogroup" aria-label="Activator CSV source">
+          <label><input type="radio" name="activator-source" value="upload" checked>Upload</label>
+          <label><input type="radio" name="activator-source" value="url">URL</label>
+          <label><input type="radio" name="activator-source" value="example">Example</label>
+        </div>
+        <div id="activator-upload-source" class="source-input">
+          <input id="activator-file" type="file" accept=".csv,text/csv">
+        </div>
+        <div id="activator-url-source" class="source-input" hidden>
+          <input id="activator-url" type="url" placeholder="https://example.com/activator.csv" aria-label="Activator CSV URL">
+        </div>
+        <div id="activator-example-source" class="source-input muted" hidden>
+          Example uses <code>../sota-grids/KK7LHY_activator_20260501.csv</code>.
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="chaser-file">Chaser CSV</label>
+        <div class="source-mode-group" role="radiogroup" aria-label="Chaser CSV source">
+          <label><input type="radio" name="chaser-source" value="upload" checked>Upload</label>
+          <label><input type="radio" name="chaser-source" value="url">URL</label>
+          <label><input type="radio" name="chaser-source" value="example">Example</label>
+        </div>
+        <div id="chaser-upload-source" class="source-input">
+          <input id="chaser-file" type="file" accept=".csv,text/csv">
+        </div>
+        <div id="chaser-url-source" class="source-input" hidden>
+          <input id="chaser-url" type="url" placeholder="https://example.com/chaser.csv" aria-label="Chaser CSV URL">
+        </div>
+        <div id="chaser-example-source" class="source-input muted" hidden>
+          Example uses <code>../sota-grids/KK7LHY_chaser_20260501.csv</code>.
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button id="apply-user-data" class="primary" type="button">Apply Logs</button>
+        <button id="reload-defaults" type="button">Reload Default Data</button>
+        <button id="clear-user-data" type="button">Clear Uploaded Logs</button>
+      </div>
+
+      <details>
+        <summary>Manual Base-File Fallback</summary>
+        <p class="muted">
+          If the browser blocks automatic loading from relative files, choose the summitslist CSV and region GeoJSON manually here.
+        </p>
+        <div class="field-group">
+          <label for="summits-file">Summitslist CSV</label>
+          <input id="summits-file" type="file" accept=".csv,text/csv">
+        </div>
+        <div class="field-group">
+          <label for="regions-file">Region GeoJSON</label>
+          <input id="regions-file" type="file" accept=".geojson,.json,application/geo+json,application/json">
+        </div>
+      </details>
+
+      <div id="status-box" class="status-box">Starting up…</div>
+
+      <div class="legend-box">
+        <strong>Legend</strong>
+        <ul class="legend-list">
+          <li><span class="legend-label"><span class="swatch" style="background: var(--empty)"></span>Empty region</span></li>
+          <li><span class="legend-label"><span class="swatch" style="background: var(--neveractivated)"></span>Summits exist, all never activated</span></li>
+          <li><span class="legend-label"><span class="swatch" style="background: var(--activated)"></span>Activated only</span></li>
+          <li><span class="legend-label"><span class="swatch" style="background: var(--chased)"></span>Chased only</span></li>
+          <li><span class="legend-label"><span class="swatch" style="background: var(--both)"></span>Both activated and chased</span></li>
+          <li><span class="legend-label"><span class="swatch" style="background: white; border-color: #94a3b8"></span>Unstyled valid region</span></li>
+        </ul>
+      </div>
+
+      <div id="summary-box" class="summary-box">
+        <strong>Region Summary</strong>
+        <ul class="summary-list">
+          <li><span>Empty</span><span id="count-empty">0</span></li>
+          <li><span>Never activated</span><span id="count-neveractivated">0</span></li>
+          <li><span>Activated only</span><span id="count-activated">0</span></li>
+          <li><span>Chased only</span><span id="count-chased">0</span></li>
+          <li><span>Both</span><span id="count-both">0</span></li>
+          <li><span>Unstyled</span><span id="count-unstyled">0</span></li>
+        </ul>
+      </div>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="../shared/sota-activity-engine.js"></script>
+    <script>
+      const DEFAULT_SUMMITS_URL = "../sota-grids/summitslist_ALL-USA_2026-03-17.csv";
+      const DEFAULT_REGIONS_URL = "../shared/nonuniqueID-geojson/temp-all-regions.geojson";
+      const DEFAULT_ACTIVATOR_URL = "../sota-grids/KK7LHY_activator_20260501.csv";
+      const DEFAULT_CHASER_URL = "../sota-grids/KK7LHY_chaser_20260501.csv";
+      const ACTIVATOR_SUMMIT_INDEX = 2;
+      const ACTIVATOR_DATE_INDEX = 3;
+      const ACTIVATOR_TIME_INDEX = 4;
+      const CHASER_CALLSIGN_INDEX = 7;
+      const CHASER_SUMMIT_INDEX = 8;
+      const CHASER_DATE_INDEX = 3;
+      const CHASER_TIME_INDEX = 4;
+      const FIELD_LETTERS = "ABCDEFGHIJKLMNOPQR";
+      const sotaEngine = window.SotaActivityEngine;
+      const sotaConfig = {
+        detectLogFormat: {
+          activatorSummitIndex: ACTIVATOR_SUMMIT_INDEX,
+          chaserSummitIndex: CHASER_SUMMIT_INDEX,
+        },
+        fieldLetters: FIELD_LETTERS,
+        activatorLog: {
+          summitIndex: ACTIVATOR_SUMMIT_INDEX,
+          dateIndex: ACTIVATOR_DATE_INDEX,
+          timeIndex: ACTIVATOR_TIME_INDEX,
+        },
+        chaserLog: {
+          summitIndex: CHASER_SUMMIT_INDEX,
+          dateIndex: CHASER_DATE_INDEX,
+          timeIndex: CHASER_TIME_INDEX,
+          callsignIndex: CHASER_CALLSIGN_INDEX,
+        },
+      };
+      const {deriveRegionIdentifier, escapeHtml, formatDisplayDate} = sotaEngine;
+      const STATUS_ORDER = ["empty", "neveractivated", "activated", "chased", "both", "unstyled"];
+      const STYLE_BY_STATUS = {
+        empty: {color: "#600000", weight: 1.4, opacity: 1, fillColor: "#c00000", fillOpacity: 0.5},
+        neveractivated: {color: "#a05000", weight: 1.4, opacity: 1, fillColor: "#ff8c00", fillOpacity: 0.5},
+        activated: {color: "#606000", weight: 1.6, opacity: 1, fillColor: "#c0c000", fillOpacity: 0.5},
+        chased: {color: "#000060", weight: 1.6, opacity: 1, fillColor: "#0000c0", fillOpacity: 0.5},
+        both: {color: "#006000", weight: 1.8, opacity: 1, fillColor: "#00c000", fillOpacity: 0.55},
+        unstyled: {color: "#7a8a99", weight: 1, opacity: 0.7, fillColor: "#ffffff", fillOpacity: 0.03},
+      };
+
+      const state = {
+        summitToContainer: new Map(),
+        summitDetails: new Map(),
+        validContainers: new Set(),
+        containersWithActivations: new Set(),
+        activatedSummits: new Set(),
+        chasedSummits: new Set(),
+        activationDetails: new Map(),
+        chaseDetails: new Map(),
+        activatedContainers: new Set(),
+        chasedContainers: new Set(),
+        containerGeojson: null,
+        containerLayer: null,
+        summitLayer: null,
+      };
+
+      const map = L.map("map", {
+        center: [42.2, -113.5],
+        zoom: 5,
+        zoomControl: false,
+      });
+
+      const baseMaps = {
+        StreetView: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }),
+        TopoView: L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+          maxZoom: 17,
+          attribution: "Kartendaten: © OpenStreetMap-Mitwirkende, SRTM | Kartendarstellung: © OpenTopoMap (CC-BY-SA)",
+        }),
+        USGS_USTopo: L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}", {
+          maxZoom: 20,
+          attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>',
+        }),
+        USGS_USImageryTopo: L.tileLayer("https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}", {
+          maxZoom: 20,
+          attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>',
+        }),
+        Stadia_AlidadeSatellite: L.tileLayer("https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}", {
+          minZoom: 0,
+          maxZoom: 20,
+          ext: "jpg",
+          attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }),
+        Esri_WorldImagery: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+          attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+        }),
+        Esri_WorldTopoMap: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}", {
+          attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community",
+        }),
+        USFS_FSTopo: L.esri.Vector.vectorTileLayer("https://tiles.arcgis.com/tiles/gGHDlz6USftL5Pau/arcgis/rest/services/FSBasemap_20240617/VectorTileServer"),
+      };
+
+      baseMaps.StreetView.addTo(map);
+      L.control.zoom({position: "topright"}).addTo(map);
+      L.control.layers(baseMaps, null, {collapsed: true, position: "topright"}).addTo(map);
+      L.control.scale().addTo(map);
+
+      const statusBox = document.getElementById("status-box");
+      const controlPanel = document.getElementById("control-panel");
+      const panelToggle = document.getElementById("panel-toggle");
+      const activatorInput = document.getElementById("activator-file");
+      const activatorUrlInput = document.getElementById("activator-url");
+      const activatorSourceInputs = document.querySelectorAll('input[name="activator-source"]');
+      const chaserInput = document.getElementById("chaser-file");
+      const chaserUrlInput = document.getElementById("chaser-url");
+      const chaserSourceInputs = document.querySelectorAll('input[name="chaser-source"]');
+      const summitsInput = document.getElementById("summits-file");
+      const regionsInput = document.getElementById("regions-file");
+
+      function defaultSiblingUrl(path) {
+        return new URL(path, window.location.href).toString();
+      }
+
+      function selectedSourceMode(name) {
+        return document.querySelector(`input[name="${name}"]:checked`)?.value || "upload";
+      }
+
+      function syncSourceMode(name, urlInput) {
+        const mode = selectedSourceMode(name);
+        document.getElementById(`${name.replace("-source", "")}-upload-source`).hidden = mode !== "upload";
+        document.getElementById(`${name.replace("-source", "")}-url-source`).hidden = mode !== "url";
+        document.getElementById(`${name.replace("-source", "")}-example-source`).hidden = mode !== "example";
+        urlInput.disabled = mode !== "url";
+      }
+
+      function syncLogSourceInputs() {
+        syncSourceMode("activator-source", activatorUrlInput);
+        syncSourceMode("chaser-source", chaserUrlInput);
+      }
+
+      function setPanelCollapsed(collapsed) {
+        controlPanel.classList.toggle("collapsed", collapsed);
+        panelToggle.textContent = collapsed ? "Show" : "Hide";
+        panelToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      }
+
+      syncLogSourceInputs();
+
+      function setStatus(message, isError = false) {
+        statusBox.textContent = message;
+        statusBox.classList.toggle("error", isError);
+      }
+
+      function updateSummary(counts) {
+        for (const status of STATUS_ORDER) {
+          document.getElementById(`count-${status}`).textContent = counts[status] ?? 0;
+        }
+      }
+
+      function validateLogFormat(text, expectedFormat, label) {
+        sotaEngine.validateLogFormat(text, expectedFormat, label, sotaConfig.detectLogFormat);
+      }
+
+      function loadSummitsDataFromText(text) {
+        const result = sotaEngine.loadSummitsDataFromText(text, {
+          fieldLetters: sotaConfig.fieldLetters,
+          today: new Date(),
+          assignContainer: (row) => {
+            const regionIdentifier = deriveRegionIdentifier(row.SummitCode);
+            return {
+              containerName: regionIdentifier,
+              detailFields: {
+                containerName: regionIdentifier,
+                regionIdentifier,
+              },
+            };
+          },
+        });
+        state.summitToContainer = result.summitToContainer;
+        state.summitDetails = result.summitDetails;
+        state.validContainers = result.validContainers;
+        state.containersWithActivations = result.containersWithActivations;
+        state.activatedSummits = new Set();
+        state.chasedSummits = new Set();
+        state.activationDetails = new Map();
+        state.chaseDetails = new Map();
+        state.activatedContainers = new Set();
+        state.chasedContainers = new Set();
+        return result.loadedSummits;
+      }
+
+      function buildContainerSetsFromLogs(activatorText, chaserText) {
+        const result = sotaEngine.buildContainerSetsFromLogs(state.summitToContainer, activatorText, chaserText, {
+          activatorLog: sotaConfig.activatorLog,
+          chaserLog: sotaConfig.chaserLog,
+        });
+        state.activatedSummits = result.activatedSummits;
+        state.chasedSummits = result.chasedSummits;
+        state.activationDetails = result.activationDetails;
+        state.chaseDetails = result.chaseDetails;
+        state.activatedContainers = result.activatedContainers;
+        state.chasedContainers = result.chasedContainers;
+      }
+
+      function classifyContainer(containerName) {
+        return sotaEngine.classifyContainer(containerName, state);
+      }
+
+      function classifySummit(summitCode) {
+        return sotaEngine.classifySummit(summitCode, state);
+      }
+
+      function popupHtmlForFeature(feature) {
+        const properties = feature.properties || {};
+        const rows = [];
+        rows.push(`<tr><th>Status</th><td>${feature.__containerStatus || "unstyled"}</td></tr>`);
+        for (const [key, value] of Object.entries(properties)) {
+          rows.push(`<tr><th>${escapeHtml(key)}</th><td>${escapeHtml(String(value))}</td></tr>`);
+        }
+        return `<table><tbody>${rows.join("")}</tbody></table>`;
+      }
+
+      function popupHtmlForSummit(summit, status) {
+        const activationDetail = state.activationDetails.get(summit.code);
+        const chaseDetail = state.chaseDetails.get(summit.code);
+        const rows = [
+          `<tr><th>Status</th><td>${escapeHtml(status)}</td></tr>`,
+          `<tr><th>Summit</th><td>${escapeHtml(summit.code)}</td></tr>`,
+        ];
+        if (summit.name) {
+          rows.push(`<tr><th>Name</th><td>${escapeHtml(summit.name)}</td></tr>`);
+        }
+        rows.push(`<tr><th>Region ID</th><td>${escapeHtml(summit.regionIdentifier || summit.containerName || "")}</td></tr>`);
+        if (activationDetail?.date) {
+          rows.push(`<tr><th>First activated</th><td>${escapeHtml(formatDisplayDate(activationDetail.date))}</td></tr>`);
+        }
+        if (chaseDetail?.date) {
+          rows.push(`<tr><th>First chased</th><td>${escapeHtml(formatDisplayDate(chaseDetail.date))}</td></tr>`);
+        }
+        if (chaseDetail?.callsign) {
+          rows.push(`<tr><th>Callsign chased</th><td>${escapeHtml(chaseDetail.callsign)}</td></tr>`);
+        }
+        if (summit.association) {
+          rows.push(`<tr><th>Association</th><td>${escapeHtml(summit.association)}</td></tr>`);
+        }
+        if (summit.region) {
+          rows.push(`<tr><th>Region</th><td>${escapeHtml(summit.region)}</td></tr>`);
+        }
+        return `<table><tbody>${rows.join("")}</tbody></table>`;
+      }
+
+      function refreshSummitLayer() {
+        if (state.summitLayer) {
+          map.removeLayer(state.summitLayer);
+        }
+
+        const summitFeatures = [];
+        for (const summit of state.summitDetails.values()) {
+          const status = classifySummit(summit.code);
+          if (!status) {
+            continue;
+          }
+          summitFeatures.push({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [summit.longitude, summit.latitude],
+            },
+            properties: {
+              summitCode: summit.code,
+              summitName: summit.name,
+              regionIdentifier: summit.regionIdentifier || summit.containerName,
+              status,
+            },
+            __summitStatus: status,
+            __summitData: summit,
+          });
+        }
+
+        state.summitLayer = L.geoJSON({type: "FeatureCollection", features: summitFeatures}, {
+          pointToLayer: (feature, latlng) => {
+            const status = feature.__summitStatus || "unstyled";
+            const style = STYLE_BY_STATUS[status] || STYLE_BY_STATUS.unstyled;
+            return L.circleMarker(latlng, {
+              radius: 5,
+              color: style.color,
+              weight: 2,
+              opacity: 1,
+              fillColor: style.fillColor,
+              fillOpacity: 0.95,
+            });
+          },
+          onEachFeature: (feature, layer) => {
+            layer.bindPopup(() => popupHtmlForSummit(feature.__summitData, feature.__summitStatus || "unstyled"));
+          },
+        }).addTo(map);
+      }
+
+      function refreshContainerLayer() {
+        if (!state.containerGeojson) {
+          return;
+        }
+
+        const counts = {
+          empty: 0,
+          neveractivated: 0,
+          activated: 0,
+          chased: 0,
+          both: 0,
+          unstyled: 0,
+        };
+
+        for (const feature of state.containerGeojson.features || []) {
+          const containerName = feature.properties?.identifier;
+          const status = classifyContainer(containerName);
+          feature.__containerStatus = status;
+          counts[status] += 1;
+        }
+
+        if (state.containerLayer) {
+          map.removeLayer(state.containerLayer);
+        }
+
+        state.containerLayer = L.geoJSON(state.containerGeojson, {
+          style: (feature) => STYLE_BY_STATUS[feature.__containerStatus] || STYLE_BY_STATUS.unstyled,
+          onEachFeature: (feature, layer) => {
+            layer.bindPopup(() => popupHtmlForFeature(feature));
+          },
+        }).addTo(map);
+
+        if (state.containerLayer.getLayers().length > 0) {
+          map.fitBounds(state.containerLayer.getBounds(), {padding: [10, 10]});
+        }
+
+        refreshSummitLayer();
+        updateSummary(counts);
+      }
+
+      async function readFileAsText(file) {
+        return await file.text();
+      }
+
+      async function readOptionalLogSource(modeName, fileInput, urlInput, label, exampleUrl) {
+        const mode = selectedSourceMode(modeName);
+
+        if (mode === "upload") {
+          if (!fileInput.files[0]) {
+            return {text: null, sourceLabel: null};
+          }
+          return {
+            text: await readFileAsText(fileInput.files[0]),
+            sourceLabel: `${label} file`,
+          };
+        }
+
+        if (mode === "example") {
+          return {
+            text: await fetchText(defaultSiblingUrl(exampleUrl)),
+            sourceLabel: `${label} example`,
+          };
+        }
+
+        const url = urlInput.value.trim();
+        if (!url) {
+          return {text: null, sourceLabel: null};
+        }
+
+        try {
+          return {
+            text: await fetchText(url),
+            sourceLabel: `${label} URL`,
+          };
+        } catch (error) {
+          throw new Error(`Failed to fetch ${label} URL: ${error.message}. Check that the URL is correct and allows cross-origin requests.`);
+        }
+      }
+
+      async function loadRegionGeojsonFromText(text) {
+        state.containerGeojson = JSON.parse(text);
+      }
+
+      async function fetchText(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${url}: ${response.status}`);
+        }
+        return await response.text();
+      }
+
+      async function loadDefaults() {
+        let extraMessage = "";
+        if (window.location.protocol === "file:") {
+          extraMessage = " Browser file:// mode often blocks automatic fetches; if that happens, use the manual base-file inputs below or serve this folder with a local HTTP server.";
+        }
+
+        setStatus(`Loading default summit CSV and region GeoJSON.${extraMessage}`);
+        try {
+          const [summitsText, regionsText] = await Promise.all([
+            fetchText(DEFAULT_SUMMITS_URL),
+            fetchText(DEFAULT_REGIONS_URL),
+          ]);
+          const loadedSummits = loadSummitsDataFromText(summitsText);
+          await loadRegionGeojsonFromText(regionsText);
+          buildContainerSetsFromLogs(null, null);
+          refreshContainerLayer();
+          setStatus(`Loaded ${loadedSummits} current summits and ${state.containerGeojson.features.length} regions from default relative paths.`);
+        } catch (error) {
+          setStatus(`${error.message}`, true);
+        }
+      }
+
+      async function applyUserLogs() {
+        if (!state.containerGeojson || state.summitToContainer.size === 0) {
+          setStatus("Load the summitslist CSV and region GeoJSON first.", true);
+          return;
+        }
+
+        try {
+          const activatorSource = await readOptionalLogSource(
+            "activator-source",
+            activatorInput,
+            activatorUrlInput,
+            "activator CSV",
+            DEFAULT_ACTIVATOR_URL
+          );
+          const chaserSource = await readOptionalLogSource(
+            "chaser-source",
+            chaserInput,
+            chaserUrlInput,
+            "chaser CSV",
+            DEFAULT_CHASER_URL
+          );
+
+          validateLogFormat(activatorSource.text, "activator", activatorSource.sourceLabel || "activator CSV");
+          validateLogFormat(chaserSource.text, "chaser", chaserSource.sourceLabel || "chaser CSV");
+
+          buildContainerSetsFromLogs(activatorSource.text, chaserSource.text);
+          refreshContainerLayer();
+
+          const sourceSummary = [activatorSource.sourceLabel, chaserSource.sourceLabel]
+            .filter(Boolean)
+            .join(" and ");
+          setStatus(sourceSummary ? `Applied ${sourceSummary}.` : "No activator or chaser CSV selected; showing base classification only.");
+        } catch (error) {
+          setStatus(error.message, true);
+        }
+      }
+
+      async function applyManualBaseFiles() {
+        if (!summitsInput.files[0] || !regionsInput.files[0]) {
+          return false;
+        }
+        try {
+          const [summitsText, regionsText] = await Promise.all([
+            readFileAsText(summitsInput.files[0]),
+            readFileAsText(regionsInput.files[0]),
+          ]);
+          const loadedSummits = loadSummitsDataFromText(summitsText);
+          await loadRegionGeojsonFromText(regionsText);
+          buildContainerSetsFromLogs(null, null);
+          refreshContainerLayer();
+          setStatus(`Loaded ${loadedSummits} current summits and ${state.containerGeojson.features.length} regions from manually selected files.`);
+          return true;
+        } catch (error) {
+          setStatus(`Failed to load manual base files: ${error.message}`, true);
+          return false;
+        }
+      }
+
+      function clearUserLogs() {
+        activatorInput.value = "";
+        activatorUrlInput.value = "";
+        chaserInput.value = "";
+        chaserUrlInput.value = "";
+        document.querySelector('input[name="activator-source"][value="upload"]').checked = true;
+        document.querySelector('input[name="chaser-source"][value="upload"]').checked = true;
+        state.activatedSummits = new Set();
+        state.chasedSummits = new Set();
+        state.activatedContainers = new Set();
+        state.chasedContainers = new Set();
+        syncLogSourceInputs();
+        refreshContainerLayer();
+        setStatus("Cleared uploaded activator and chaser logs.");
+      }
+
+      document.getElementById("reload-defaults").addEventListener("click", async () => {
+        const usedManualFiles = await applyManualBaseFiles();
+        if (!usedManualFiles) {
+          await loadDefaults();
+        }
+      });
+
+      document.getElementById("apply-user-data").addEventListener("click", async () => {
+        if (summitsInput.files[0] && regionsInput.files[0] && (!state.containerGeojson || state.summitToContainer.size === 0)) {
+          await applyManualBaseFiles();
+        }
+        await applyUserLogs();
+      });
+
+      activatorSourceInputs.forEach((input) => input.addEventListener("change", syncLogSourceInputs));
+      chaserSourceInputs.forEach((input) => input.addEventListener("change", syncLogSourceInputs));
+      document.getElementById("clear-user-data").addEventListener("click", clearUserLogs);
+      panelToggle.addEventListener("click", () => {
+        setPanelCollapsed(!controlPanel.classList.contains("collapsed"));
+      });
+
+      Promise.resolve().then(loadDefaults);
+    </script>
+  </body>
+</html>
