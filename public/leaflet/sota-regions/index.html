@@ -724,7 +724,7 @@
           return {
             ...style,
             color: "#111111",
-            weight: Math.max(style.weight + 1, 2.4),
+            weight: Math.max(style.weight + 1.6, 3),
             opacity: 1,
             fillOpacity: Math.min((style.fillOpacity ?? 0.4) + 0.1, 0.7),
           };
@@ -768,13 +768,6 @@
 
         state.hoveredContainerIds = hoveredIds;
         applyContainerDisplayStyles();
-
-        for (const identifier of hoveredIds) {
-          const layer = state.containerLayersById.get(identifier);
-          if (layer && typeof layer.bringToFront === "function") {
-            layer.bringToFront();
-          }
-        }
       }
 
       function popupHtmlForFeature(feature) {
