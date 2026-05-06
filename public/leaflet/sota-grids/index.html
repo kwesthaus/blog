@@ -373,6 +373,7 @@
 
     <div id="map"></div>
 
+    <script src="../shared/sota-activity-engine.js"></script>
     <script>
       const DEFAULT_SUMMITS_URL = "./summitslist_ALL-USA_2026-03-17.csv";
       const DEFAULT_GRIDS_URL = "./conus-maidenhead-4char.geojson";
@@ -384,6 +385,26 @@
       const CHASER_DATE_INDEX = 3;
       const CHASER_TIME_INDEX = 4;
       const FIELD_LETTERS = "ABCDEFGHIJKLMNOPQR";
+      const sotaEngine = window.SotaActivityEngine;
+      const sotaConfig = {
+        detectLogFormat: {
+          activatorSummitIndex: ACTIVATOR_SUMMIT_INDEX,
+          chaserSummitIndex: CHASER_SUMMIT_INDEX,
+        },
+        fieldLetters: FIELD_LETTERS,
+        activatorLog: {
+          summitIndex: ACTIVATOR_SUMMIT_INDEX,
+          dateIndex: ACTIVATOR_DATE_INDEX,
+          timeIndex: ACTIVATOR_TIME_INDEX,
+        },
+        chaserLog: {
+          summitIndex: CHASER_SUMMIT_INDEX,
+          dateIndex: CHASER_DATE_INDEX,
+          timeIndex: CHASER_TIME_INDEX,
+          callsignIndex: CHASER_CALLSIGN_INDEX,
+        },
+      };
+      const {escapeHtml, formatDisplayDate} = sotaEngine;
       const STATUS_ORDER = ["empty", "neveractivated", "activated", "chased", "both", "unstyled"];
       const STYLE_BY_STATUS = {
         empty: {color: "#600000", weight: 1.4, opacity: 1, fillColor: "#c00000", fillOpacity: 0.5},
@@ -506,370 +527,47 @@
         }
       }
 
-      function parseCsv(text) {
-        const rows = [];
-        let row = [];
-        let field = "";
-        let inQuotes = false;
-
-        for (let index = 0; index < text.length; index += 1) {
-          const char = text[index];
-          const nextChar = text[index + 1];
-
-          if (char === '"') {
-            if (inQuotes && nextChar === '"') {
-              field += '"';
-              index += 1;
-            } else {
-              inQuotes = !inQuotes;
-            }
-            continue;
-          }
-
-          if (!inQuotes && char === ",") {
-            row.push(field);
-            field = "";
-            continue;
-          }
-
-          if (!inQuotes && (char === "\n" || char === "\r")) {
-            if (char === "\r" && nextChar === "\n") {
-              index += 1;
-            }
-            row.push(field);
-            field = "";
-            if (row.length > 1 || row[0] !== "") {
-              rows.push(row);
-            }
-            row = [];
-            continue;
-          }
-
-          field += char;
-        }
-
-        row.push(field);
-        if (row.length > 1 || row[0] !== "") {
-          rows.push(row);
-        }
-        return rows;
-      }
-
-      function looksLikeSummitCode(value) {
-        return /^[A-Z0-9]{1,4}\/[A-Z]{2,3}-\d{2,3}$/i.test((value || "").trim());
-      }
-
-      function detectLogFormat(text) {
-        const rows = parseCsv(text)
-          .filter((row) => row.length > 0)
-          .slice(0, 25);
-
-        if (!rows.length) {
-          return "unknown";
-        }
-
-        let activatorMatches = 0;
-        let chaserMatches = 0;
-        for (const row of rows) {
-          if (looksLikeSummitCode(row[ACTIVATOR_SUMMIT_INDEX])) {
-            activatorMatches += 1;
-          }
-          if (looksLikeSummitCode(row[CHASER_SUMMIT_INDEX])) {
-            chaserMatches += 1;
-          }
-        }
-
-        if (activatorMatches > 0 && chaserMatches === 0) {
-          return "activator";
-        }
-        if (chaserMatches > 0 && activatorMatches === 0) {
-          return "chaser";
-        }
-        if (activatorMatches > chaserMatches * 2) {
-          return "activator";
-        }
-        if (chaserMatches > activatorMatches * 2) {
-          return "chaser";
-        }
-        return "unknown";
-      }
-
       function validateLogFormat(text, expectedFormat, label) {
-        if (!text) {
-          return;
-        }
-
-        const detectedFormat = detectLogFormat(text);
-        if (detectedFormat === "unknown" || detectedFormat === expectedFormat) {
-          return;
-        }
-
-        if (expectedFormat === "activator" && detectedFormat === "chaser") {
-          throw new Error(`The ${label} looks like a chaser CSV, not an activator CSV. Check whether the activator and chaser inputs were swapped.`);
-        }
-        if (expectedFormat === "chaser" && detectedFormat === "activator") {
-          throw new Error(`The ${label} looks like an activator CSV, not a chaser CSV. Check whether the activator and chaser inputs were swapped.`);
-        }
-      }
-
-      function rowsToObjects(rows) {
-        if (!rows.length) {
-          return [];
-        }
-        const [header, ...body] = rows;
-        return body.map((values) => {
-          const entry = {};
-          header.forEach((key, index) => {
-            entry[key] = values[index] ?? "";
-          });
-          return entry;
-        });
-      }
-
-      function parseSotaDate(rawValue) {
-        if (!rawValue) {
-          return null;
-        }
-        const [day, month, year] = rawValue.split("/").map(Number);
-        if (!day || !month || !year) {
-          return null;
-        }
-        return new Date(year, month - 1, day);
-      }
-
-      function formatDisplayDate(rawValue) {
-        const date = parseSotaDate(rawValue);
-        if (!date) {
-          return rawValue;
-        }
-        const year = date.getFullYear();
-        const month = date.toLocaleString("en-US", {month: "short"});
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year} ${month} ${day}`;
-      }
-
-      function summitIsCurrent(row, today) {
-        const validFrom = parseSotaDate(row.ValidFrom);
-        const validTo = parseSotaDate(row.ValidTo);
-        if (validFrom && today < validFrom) {
-          return false;
-        }
-        if (validTo && today > validTo) {
-          return false;
-        }
-        return true;
-      }
-
-      function maidenhead4FromLatLon(latitude, longitude) {
-        let lat = Number(latitude);
-        let lon = Number(longitude);
-        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-          throw new Error("Invalid latitude or longitude");
-        }
-        if (lat === 90) {
-          lat = 89.999999999;
-        }
-        if (lon === 180) {
-          lon = 179.999999999;
-        }
-
-        const normalizedLon = lon + 180;
-        const normalizedLat = lat + 90;
-        const fieldLonIndex = Math.floor(normalizedLon / 20);
-        const fieldLatIndex = Math.floor(normalizedLat / 10);
-        const squareLonIndex = Math.floor((normalizedLon % 20) / 2);
-        const squareLatIndex = Math.floor(normalizedLat % 10);
-
-        return (
-          FIELD_LETTERS[fieldLonIndex]
-          + FIELD_LETTERS[fieldLatIndex]
-          + String(squareLonIndex)
-          + String(squareLatIndex)
-        );
-      }
-
-      function resetSummitState() {
-        state.summitToGrid = new Map();
-        state.summitDetails = new Map();
-        state.validGrids = new Set();
-        state.gridsWithActivations = new Set();
-        state.activatedSummits = new Set();
-        state.chasedSummits = new Set();
-        state.activationDetails = new Map();
-        state.chaseDetails = new Map();
+        sotaEngine.validateLogFormat(text, expectedFormat, label, sotaConfig.detectLogFormat);
       }
 
       function loadSummitslistFromText(text) {
-        resetSummitState();
-        const rows = rowsToObjects(parseCsv(text));
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        let loadedSummits = 0;
-        for (const row of rows) {
-          const summitCode = (row.SummitCode || "").trim();
-          if (!summitCode || !summitIsCurrent(row, today)) {
-            continue;
-          }
-
-          const longitude = Number(row.Longitude);
-          const latitude = Number(row.Latitude);
-          if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
-            continue;
-          }
-
-          const gridName = maidenhead4FromLatLon(latitude, longitude);
-          state.summitToGrid.set(summitCode, gridName);
-          state.summitDetails.set(summitCode, {
-            code: summitCode,
-            name: (row.SummitName || "").trim(),
-            association: (row.AssociationName || row.Association || "").trim(),
-            region: (row.RegionName || row.Region || "").trim(),
-            gridName,
-            latitude,
-            longitude,
-          });
-          state.validGrids.add(gridName);
-
-          const activationCount = Number.parseInt(row.ActivationCount || "0", 10);
-          if (Number.isFinite(activationCount) && activationCount > 0) {
-            state.gridsWithActivations.add(gridName);
-          }
-          loadedSummits += 1;
-        }
-        return loadedSummits;
-      }
-
-      function parseLogTimestamp(rawDate, rawTime) {
-        if (!rawDate) {
-          return null;
-        }
-
-        const [day, month, year] = rawDate.split("/").map(Number);
-        if (!day || !month || !year) {
-          return null;
-        }
-
-        let hours = 0;
-        let minutes = 0;
-        const normalizedTime = String(rawTime || "").trim();
-        if (normalizedTime) {
-          if (normalizedTime.includes(":")) {
-            const [hourPart, minutePart] = normalizedTime.split(":").map(Number);
-            hours = Number.isFinite(hourPart) ? hourPart : 0;
-            minutes = Number.isFinite(minutePart) ? minutePart : 0;
-          } else {
-            const digitsOnly = normalizedTime.replaceAll(/\D/g, "");
-            if (digitsOnly.length >= 3) {
-              hours = Number(digitsOnly.slice(0, -2)) || 0;
-              minutes = Number(digitsOnly.slice(-2)) || 0;
-            }
-          }
-        }
-
-        return new Date(year, month - 1, day, hours, minutes).getTime();
-      }
-
-      function loadLoggedSummitsFromText(text, options) {
-        const rows = parseCsv(text);
-        const summits = new Set();
-        const details = new Map();
-        for (const row of rows) {
-          if (row.length <= options.summitIndex) {
-            continue;
-          }
-          const summitCode = (row[options.summitIndex] || "").trim();
-          if (summitCode) {
-            summits.add(summitCode);
-
-            const timestamp = parseLogTimestamp(row[options.dateIndex], row[options.timeIndex]);
-            const existing = details.get(summitCode);
-            if (!existing || (timestamp !== null && (existing.timestamp === null || timestamp < existing.timestamp))) {
-              details.set(summitCode, {
-                date: (row[options.dateIndex] || "").trim(),
-                callsign: options.callsignIndex === undefined ? "" : (row[options.callsignIndex] || "").trim(),
-                timestamp,
-              });
-            }
-          }
-        }
-        return {summits, details};
-      }
-
-      function buildGridSetsFromLogs(activatorText, chaserText) {
+        const result = sotaEngine.loadSummitslistFromText(text, {
+          fieldLetters: sotaConfig.fieldLetters,
+          today: new Date(),
+        });
+        state.summitToGrid = result.summitToGrid;
+        state.summitDetails = result.summitDetails;
+        state.validGrids = result.validGrids;
+        state.gridsWithActivations = result.gridsWithActivations;
         state.activatedSummits = new Set();
         state.chasedSummits = new Set();
         state.activationDetails = new Map();
         state.chaseDetails = new Map();
         state.activatedGrids = new Set();
         state.chasedGrids = new Set();
+        return result.loadedSummits;
+      }
 
-        if (activatorText) {
-          const activatorData = loadLoggedSummitsFromText(activatorText, {
-            summitIndex: ACTIVATOR_SUMMIT_INDEX,
-            dateIndex: ACTIVATOR_DATE_INDEX,
-            timeIndex: ACTIVATOR_TIME_INDEX,
-          });
-          state.activatedSummits = activatorData.summits;
-          state.activationDetails = activatorData.details;
-          for (const summitCode of state.activatedSummits) {
-            if (state.summitToGrid.has(summitCode)) {
-              state.activatedGrids.add(state.summitToGrid.get(summitCode));
-            }
-          }
-        }
-
-        if (chaserText) {
-          const chaserData = loadLoggedSummitsFromText(chaserText, {
-            summitIndex: CHASER_SUMMIT_INDEX,
-            dateIndex: CHASER_DATE_INDEX,
-            timeIndex: CHASER_TIME_INDEX,
-            callsignIndex: CHASER_CALLSIGN_INDEX,
-          });
-          state.chasedSummits = chaserData.summits;
-          state.chaseDetails = chaserData.details;
-          for (const summitCode of state.chasedSummits) {
-            if (state.summitToGrid.has(summitCode)) {
-              state.chasedGrids.add(state.summitToGrid.get(summitCode));
-            }
-          }
-        }
+      function buildGridSetsFromLogs(activatorText, chaserText) {
+        const result = sotaEngine.buildGridSetsFromLogs(state.summitToGrid, activatorText, chaserText, {
+          activatorLog: sotaConfig.activatorLog,
+          chaserLog: sotaConfig.chaserLog,
+        });
+        state.activatedSummits = result.activatedSummits;
+        state.chasedSummits = result.chasedSummits;
+        state.activationDetails = result.activationDetails;
+        state.chaseDetails = result.chaseDetails;
+        state.activatedGrids = result.activatedGrids;
+        state.chasedGrids = result.chasedGrids;
       }
 
       function classifyGrid(gridName) {
-        if (!state.validGrids.has(gridName)) {
-          return "empty";
-        }
-        if (!state.gridsWithActivations.has(gridName)) {
-          return "neveractivated";
-        }
-        const activated = state.activatedGrids.has(gridName);
-        const chased = state.chasedGrids.has(gridName);
-        if (activated && chased) {
-          return "both";
-        }
-        if (activated) {
-          return "activated";
-        }
-        if (chased) {
-          return "chased";
-        }
-        return "unstyled";
+        return sotaEngine.classifyGrid(gridName, state);
       }
 
       function classifySummit(summitCode) {
-        const activated = state.activatedSummits.has(summitCode);
-        const chased = state.chasedSummits.has(summitCode);
-        if (activated && chased) {
-          return "both";
-        }
-        if (activated) {
-          return "activated";
-        }
-        if (chased) {
-          return "chased";
-        }
-        return null;
+        return sotaEngine.classifySummit(summitCode, state);
       }
 
       function popupHtmlForFeature(feature) {
@@ -880,14 +578,6 @@
           rows.push(`<tr><th>${escapeHtml(key)}</th><td>${escapeHtml(String(value))}</td></tr>`);
         }
         return `<table><tbody>${rows.join("")}</tbody></table>`;
-      }
-
-      function escapeHtml(value) {
-        return value
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;");
       }
 
       function popupHtmlForSummit(summit, status) {
