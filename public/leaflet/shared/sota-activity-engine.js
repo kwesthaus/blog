@@ -131,6 +131,18 @@
     );
   }
 
+  function deriveRegionIdentifier(summitCode) {
+    const normalizedSummitCode = String(summitCode || "").trim().toUpperCase();
+    if (!normalizedSummitCode) {
+      return "";
+    }
+    const dashIndex = normalizedSummitCode.lastIndexOf("-");
+    if (dashIndex === -1) {
+      return normalizedSummitCode;
+    }
+    return normalizedSummitCode.slice(0, dashIndex);
+  }
+
   function looksLikeSummitCode(value) {
     return /^[A-Z0-9]{1,4}\/[A-Z]{2,3}-\d{2,3}$/i.test((value || "").trim());
   }
@@ -253,15 +265,45 @@
     return normalizedToday;
   }
 
-  function loadSummitslistFromText(text, options = {}) {
+  function defaultGridContainer(row, context) {
+    const containerName = maidenhead4FromLatLon(row.Latitude, row.Longitude, context.fieldLetters);
+    return {
+      containerName,
+      detailFields: {
+        gridName: containerName,
+        regionIdentifier: deriveRegionIdentifier(row.SummitCode),
+      },
+    };
+  }
+
+  function normalizeContainerAssignment(assignment, row, context) {
+    if (typeof assignment === "string") {
+      return {
+        containerName: assignment,
+        detailFields: {},
+      };
+    }
+
+    if (!assignment || typeof assignment.containerName !== "string") {
+      throw new Error(`Container assignment failed for summit ${row.SummitCode || "(unknown)"}.`);
+    }
+
+    return {
+      containerName: assignment.containerName,
+      detailFields: assignment.detailFields || {},
+    };
+  }
+
+  function loadSummitsDataFromText(text, options = {}) {
     const today = normalizeToday(options.today);
     const fieldLetters = options.fieldLetters ?? DEFAULT_FIELD_LETTERS;
     const rows = rowsToObjects(parseCsv(text));
+    const assignContainer = options.assignContainer || defaultGridContainer;
 
-    const summitToGrid = new Map();
+    const summitToContainer = new Map();
     const summitDetails = new Map();
-    const validGrids = new Set();
-    const gridsWithActivations = new Set();
+    const validContainers = new Set();
+    const containersWithActivations = new Set();
 
     let loadedSummits = 0;
     for (const row of rows) {
@@ -276,43 +318,53 @@
         continue;
       }
 
-      const gridName = maidenhead4FromLatLon(latitude, longitude, fieldLetters);
-      summitToGrid.set(summitCode, gridName);
+      const assignment = normalizeContainerAssignment(assignContainer({
+        ...row,
+        Latitude: latitude,
+        Longitude: longitude,
+        SummitCode: summitCode,
+      }, {fieldLetters}), row, {fieldLetters});
+      const containerName = assignment.containerName.trim();
+      if (!containerName) {
+        continue;
+      }
+
+      summitToContainer.set(summitCode, containerName);
       summitDetails.set(summitCode, {
         code: summitCode,
         name: (row.SummitName || "").trim(),
         association: (row.AssociationName || row.Association || "").trim(),
         region: (row.RegionName || row.Region || "").trim(),
-        gridName,
         latitude,
         longitude,
+        ...assignment.detailFields,
       });
-      validGrids.add(gridName);
+      validContainers.add(containerName);
 
       const activationCount = Number.parseInt(row.ActivationCount || "0", 10);
       if (Number.isFinite(activationCount) && activationCount > 0) {
-        gridsWithActivations.add(gridName);
+        containersWithActivations.add(containerName);
       }
       loadedSummits += 1;
     }
 
     return {
       loadedSummits,
-      summitToGrid,
+      summitToContainer,
       summitDetails,
-      validGrids,
-      gridsWithActivations,
+      validContainers,
+      containersWithActivations,
     };
   }
 
-  function buildGridSetsFromLogs(summitToGrid, activatorText, chaserText, options = {}) {
+  function buildContainerSetsFromLogs(summitToContainer, activatorText, chaserText, options = {}) {
     const result = {
       activatedSummits: new Set(),
       chasedSummits: new Set(),
       activationDetails: new Map(),
       chaseDetails: new Map(),
-      activatedGrids: new Set(),
-      chasedGrids: new Set(),
+      activatedContainers: new Set(),
+      chasedContainers: new Set(),
     };
 
     if (activatorText) {
@@ -320,8 +372,8 @@
       result.activatedSummits = activatorData.summits;
       result.activationDetails = activatorData.details;
       for (const summitCode of result.activatedSummits) {
-        if (summitToGrid.has(summitCode)) {
-          result.activatedGrids.add(summitToGrid.get(summitCode));
+        if (summitToContainer.has(summitCode)) {
+          result.activatedContainers.add(summitToContainer.get(summitCode));
         }
       }
     }
@@ -331,8 +383,8 @@
       result.chasedSummits = chaserData.summits;
       result.chaseDetails = chaserData.details;
       for (const summitCode of result.chasedSummits) {
-        if (summitToGrid.has(summitCode)) {
-          result.chasedGrids.add(summitToGrid.get(summitCode));
+        if (summitToContainer.has(summitCode)) {
+          result.chasedContainers.add(summitToContainer.get(summitCode));
         }
       }
     }
@@ -340,15 +392,15 @@
     return result;
   }
 
-  function classifyGrid(gridName, state) {
-    if (!state.validGrids.has(gridName)) {
+  function classifyContainer(containerName, state) {
+    if (!state.validContainers.has(containerName)) {
       return "empty";
     }
-    if (!state.gridsWithActivations.has(gridName)) {
+    if (!state.containersWithActivations.has(containerName)) {
       return "neveractivated";
     }
-    const activated = state.activatedGrids.has(gridName);
-    const chased = state.chasedGrids.has(gridName);
+    const activated = state.activatedContainers.has(containerName);
+    const chased = state.chasedContainers.has(containerName);
     if (activated && chased) {
       return "both";
     }
@@ -385,14 +437,15 @@
   }
 
   global.SotaActivityEngine = Object.freeze({
-    buildGridSetsFromLogs,
-    classifyGrid,
+    buildContainerSetsFromLogs,
+    classifyContainer,
     classifySummit,
     detectLogFormat,
+    deriveRegionIdentifier,
     escapeHtml,
     formatDisplayDate,
     loadLoggedSummitsFromText,
-    loadSummitslistFromText,
+    loadSummitsDataFromText,
     looksLikeSummitCode,
     maidenhead4FromLatLon,
     parseCsv,

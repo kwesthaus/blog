@@ -416,16 +416,16 @@
       };
 
       const state = {
-        summitToGrid: new Map(),
+        summitToContainer: new Map(),
         summitDetails: new Map(),
-        validGrids: new Set(),
-        gridsWithActivations: new Set(),
+        validContainers: new Set(),
+        containersWithActivations: new Set(),
         activatedSummits: new Set(),
         chasedSummits: new Set(),
         activationDetails: new Map(),
         chaseDetails: new Map(),
-        activatedGrids: new Set(),
-        chasedGrids: new Set(),
+        activatedContainers: new Set(),
+        chasedContainers: new Set(),
         gridGeojson: null,
         gridLayer: null,
         summitLayer: null,
@@ -531,26 +531,26 @@
         sotaEngine.validateLogFormat(text, expectedFormat, label, sotaConfig.detectLogFormat);
       }
 
-      function loadSummitslistFromText(text) {
-        const result = sotaEngine.loadSummitslistFromText(text, {
+      function loadSummitsDataFromText(text) {
+        const result = sotaEngine.loadSummitsDataFromText(text, {
           fieldLetters: sotaConfig.fieldLetters,
           today: new Date(),
         });
-        state.summitToGrid = result.summitToGrid;
+        state.summitToContainer = result.summitToContainer;
         state.summitDetails = result.summitDetails;
-        state.validGrids = result.validGrids;
-        state.gridsWithActivations = result.gridsWithActivations;
+        state.validContainers = result.validContainers;
+        state.containersWithActivations = result.containersWithActivations;
         state.activatedSummits = new Set();
         state.chasedSummits = new Set();
         state.activationDetails = new Map();
         state.chaseDetails = new Map();
-        state.activatedGrids = new Set();
-        state.chasedGrids = new Set();
+        state.activatedContainers = new Set();
+        state.chasedContainers = new Set();
         return result.loadedSummits;
       }
 
-      function buildGridSetsFromLogs(activatorText, chaserText) {
-        const result = sotaEngine.buildGridSetsFromLogs(state.summitToGrid, activatorText, chaserText, {
+      function buildContainerSetsFromLogs(activatorText, chaserText) {
+        const result = sotaEngine.buildContainerSetsFromLogs(state.summitToContainer, activatorText, chaserText, {
           activatorLog: sotaConfig.activatorLog,
           chaserLog: sotaConfig.chaserLog,
         });
@@ -558,12 +558,12 @@
         state.chasedSummits = result.chasedSummits;
         state.activationDetails = result.activationDetails;
         state.chaseDetails = result.chaseDetails;
-        state.activatedGrids = result.activatedGrids;
-        state.chasedGrids = result.chasedGrids;
+        state.activatedContainers = result.activatedContainers;
+        state.chasedContainers = result.chasedContainers;
       }
 
-      function classifyGrid(gridName) {
-        return sotaEngine.classifyGrid(gridName, state);
+      function classifyContainer(containerName) {
+        return sotaEngine.classifyContainer(containerName, state);
       }
 
       function classifySummit(summitCode) {
@@ -672,7 +672,7 @@
 
         for (const feature of state.gridGeojson.features || []) {
           const gridName = feature.properties?.grid;
-          const status = classifyGrid(gridName);
+          const status = classifyContainer(gridName);
           feature.__gridStatus = status;
           counts[status] += 1;
         }
@@ -759,9 +759,9 @@
             fetchText(DEFAULT_SUMMITS_URL),
             fetchText(DEFAULT_GRIDS_URL),
           ]);
-          const loadedSummits = loadSummitslistFromText(summitsText);
+          const loadedSummits = loadSummitsDataFromText(summitsText);
           await loadGridGeojsonFromText(gridsText);
-          buildGridSetsFromLogs(null, null);
+          buildContainerSetsFromLogs(null, null);
           refreshGridLayer();
           setStatus(`Loaded ${loadedSummits} current summits and ${state.gridGeojson.features.length} grids from default sibling paths.`);
         } catch (error) {
@@ -770,7 +770,7 @@
       }
 
       async function applyUserLogs() {
-        if (!state.gridGeojson || state.summitToGrid.size === 0) {
+        if (!state.gridGeojson || state.summitToContainer.size === 0) {
           setStatus("Load the summitslist CSV and grid GeoJSON first.", true);
           return;
         }
@@ -794,7 +794,7 @@
           validateLogFormat(activatorSource.text, "activator", activatorSource.sourceLabel || "activator CSV");
           validateLogFormat(chaserSource.text, "chaser", chaserSource.sourceLabel || "chaser CSV");
 
-          buildGridSetsFromLogs(activatorSource.text, chaserSource.text);
+          buildContainerSetsFromLogs(activatorSource.text, chaserSource.text);
           refreshGridLayer();
 
           const sourceSummary = [activatorSource.sourceLabel, chaserSource.sourceLabel]
@@ -815,9 +815,9 @@
             readFileAsText(summitsInput.files[0]),
             readFileAsText(gridsInput.files[0]),
           ]);
-          const loadedSummits = loadSummitslistFromText(summitsText);
+          const loadedSummits = loadSummitsDataFromText(summitsText);
           await loadGridGeojsonFromText(gridsText);
-          buildGridSetsFromLogs(null, null);
+          buildContainerSetsFromLogs(null, null);
           refreshGridLayer();
           setStatus(`Loaded ${loadedSummits} current summits and ${state.gridGeojson.features.length} grids from manually selected files.`);
           return true;
@@ -836,8 +836,8 @@
         document.querySelector('input[name="chaser-source"][value="upload"]').checked = true;
         state.activatedSummits = new Set();
         state.chasedSummits = new Set();
-        state.activatedGrids = new Set();
-        state.chasedGrids = new Set();
+        state.activatedContainers = new Set();
+        state.chasedContainers = new Set();
         syncLogSourceInputs();
         refreshGridLayer();
         setStatus("Cleared uploaded activator and chaser logs.");
@@ -851,7 +851,7 @@
       });
 
       document.getElementById("apply-user-data").addEventListener("click", async () => {
-        if (summitsInput.files[0] && gridsInput.files[0] && (!state.gridGeojson || state.summitToGrid.size === 0)) {
+        if (summitsInput.files[0] && gridsInput.files[0] && (!state.gridGeojson || state.summitToContainer.size === 0)) {
           await applyManualBaseFiles();
         }
         await applyUserLogs();
