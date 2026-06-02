@@ -38,6 +38,16 @@
         margin: 0;
         padding: 0;
       }
+            .controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                align-items: center;
+                padding: 0.5rem;
+            }
+            .controls input[type="text"] {
+                min-width: 16rem;
+            }
       #map {
         width: 100vw;
         height: 90vh;
@@ -50,6 +60,12 @@
 
   </head>
   <body>
+        <div class="controls">
+            <span>Remote GeoJSON URL: <input type="text" name="geojson-url" id="geojson-url" placeholder="https://example.com/counties.geojson"/></span>
+            <input type="button" onclick="loadRemoteGeoJson()" value="load URL"/>
+            <input type="button" onclick="loadExampleGeoJson()" value="load example data"/>
+            <span id="load-status"></span>
+        </div>
     <div id="map"></div>
     <span>Latitude, Longitude: <input type="text" name="latlng" id="latlng"/></span>
     <input type="button" onclick="zoomTo()" value="zoomTo"/>
@@ -62,6 +78,8 @@
         });
 
         let globalLayer = null;
+        let loadStatus = null;
+        const exampleGeoJsonUrl = 'https://wlenw6vcgj6yybvc.public.blob.vercel-storage.com/counties-5m_mine.geojson';
 
         function zoomTo() {
             var latlngtxt = document.getElementById("latlng").value;
@@ -92,6 +110,14 @@
             .setContent(lltext)
             .openOn(map);
         } 
+
+        function setLoadStatus(message, isError) {
+            if (!loadStatus) {
+                return;
+            }
+            loadStatus.textContent = message || '';
+            loadStatus.style.color = isError ? '#b00020' : '';
+        }
 
         // https://stackoverflow.com/questions/19721439/download-json-object-as-a-file-from-browser
         function downloadObjectAsJson(exportObj, exportName){
@@ -435,6 +461,54 @@
             };
         }
 
+        function replaceGlobalLayer(nextLayer) {
+            if (globalLayer && map.hasLayer(globalLayer)) {
+                map.removeLayer(globalLayer);
+            }
+            globalLayer = nextLayer;
+            if (globalLayer && !map.hasLayer(globalLayer)) {
+                globalLayer.addTo(map);
+            }
+        }
+
+        function loadGeoJsonLayer(geojson) {
+            let layer = L.geoJson(geojson, {
+                onEachFeature: countyEachFeature,
+                style: visitTypeStyle,
+            });
+            replaceGlobalLayer(layer);
+            return layer;
+        }
+
+        async function loadRemoteGeoJson() {
+            let urlInput = document.getElementById('geojson-url');
+            let remoteUrl = urlInput.value.trim();
+            if (!remoteUrl) {
+                setLoadStatus('Enter a GeoJSON URL to load.', true);
+                return;
+            }
+
+            setLoadStatus('Loading remote GeoJSON...');
+            try {
+                let response = await fetch(remoteUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                let geojson = await response.json();
+                loadGeoJsonLayer(geojson);
+                setLoadStatus('Remote GeoJSON loaded.');
+            } catch (error) {
+                console.error('Failed to load remote GeoJSON:', error);
+                setLoadStatus(`Failed to load URL: ${error.message}`, true);
+            }
+        }
+
+        function loadExampleGeoJson() {
+            let urlInput = document.getElementById('geojson-url');
+            urlInput.value = exampleGeoJsonUrl;
+            loadRemoteGeoJson();
+        }
+
         let fileControl = L.Control.fileLayerLoad({
             // Allows you to use a customized version of L.geoJson.
             // For example if you are using the Proj4Leaflet leaflet plugin,
@@ -453,10 +527,16 @@
             // Restrict accepted file formats (default: .geojson, .json, .kml, and .gpx) ?
             formats: [
                 '.geojson',
-            ]
+            ],
+            layer: loadGeoJsonLayer,
         }).addTo(map);
         fileControl.loader.on('data:loaded', function(e) {
-            globalLayer = e.layer;
+            replaceGlobalLayer(e.layer);
+            setLoadStatus('Local GeoJSON loaded.');
+        });
+        fileControl.loader.on('data:error', function(error) {
+            console.error('Failed to load local GeoJSON:', error);
+            setLoadStatus('Failed to load local GeoJSON.', true);
         });
 
         // addGeojsonFileToControls('../shared/nonuniqueID-geojson/counties2.geojson', 'counties', visitTypeStyle, undefined, layerControl, true, legendControl);
