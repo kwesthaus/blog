@@ -545,6 +545,7 @@
         chasedContainers: new Set(),
         containerGeojson: null,
         containerLayer: null,
+        hoverOutlineLayer: null,
         containerLayersById: new Map(),
         hoveredContainerIds: new Set(),
         highlightedContainerIds: new Set(),
@@ -556,6 +557,9 @@
         zoom: 5,
         zoomControl: false,
       });
+      map.createPane("hoverOutlinePane");
+      map.getPane("hoverOutlinePane").style.zIndex = "625";
+      map.getPane("hoverOutlinePane").style.pointerEvents = "none";
       map.createPane("summitPane");
       map.getPane("summitPane").style.zIndex = "650";
 
@@ -723,14 +727,23 @@
         if (state.hoveredContainerIds.has(identifier)) {
           return {
             ...style,
-            color: "#111111",
-            weight: Math.max(style.weight + 1.6, 3),
-            opacity: 1,
             fillOpacity: Math.min((style.fillOpacity ?? 0.4) + 0.1, 0.7),
           };
         }
 
         return style;
+      }
+
+      function hoverOutlineStyle(feature) {
+        const style = baseStyleForContainer(feature);
+        return {
+          pane: "hoverOutlinePane",
+          color: style.color,
+          weight: Math.max(style.weight + 1.6, 3),
+          opacity: 1,
+          fill: false,
+          interactive: false,
+        };
       }
 
       function applyContainerDisplayStyles() {
@@ -741,6 +754,35 @@
           }
           layer.setStyle(containerStyleForDisplay(feature));
         }
+      }
+
+      function renderHoverOutlineLayer() {
+        if (state.hoverOutlineLayer) {
+          map.removeLayer(state.hoverOutlineLayer);
+          state.hoverOutlineLayer = null;
+        }
+
+        if (!state.containerGeojson || state.hoveredContainerIds.size === 0) {
+          return;
+        }
+
+        const hoverFeatures = (state.containerGeojson.features || []).filter((feature) => {
+          const identifier = feature.properties?.identifier;
+          return identifier && state.hoveredContainerIds.has(identifier);
+        });
+
+        if (!hoverFeatures.length) {
+          return;
+        }
+
+        state.hoverOutlineLayer = L.geoJSON({
+          type: "FeatureCollection",
+          features: hoverFeatures,
+        }, {
+          pane: "hoverOutlinePane",
+          interactive: false,
+          style: (feature) => hoverOutlineStyle(feature),
+        }).addTo(map);
       }
 
       function setsEqual(left, right) {
@@ -768,6 +810,7 @@
 
         state.hoveredContainerIds = hoveredIds;
         applyContainerDisplayStyles();
+        renderHoverOutlineLayer();
       }
 
       function popupHtmlForFeature(feature) {
@@ -993,6 +1036,10 @@
         if (state.containerLayer) {
           map.removeLayer(state.containerLayer);
         }
+        if (state.hoverOutlineLayer) {
+          map.removeLayer(state.hoverOutlineLayer);
+          state.hoverOutlineLayer = null;
+        }
 
         state.containerLayersById = new Map();
         state.hoveredContainerIds = new Set();
@@ -1206,6 +1253,7 @@
         if (state.hoveredContainerIds.size > 0) {
           state.hoveredContainerIds = new Set();
           applyContainerDisplayStyles();
+          renderHoverOutlineLayer();
         }
       });
       map.on("click", (event) => {
