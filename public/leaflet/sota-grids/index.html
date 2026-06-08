@@ -300,7 +300,7 @@
           <input id="activator-url" type="url" placeholder="https://example.com/activator.csv" aria-label="Activator CSV URL">
         </div>
         <div id="activator-example-source" class="source-input muted" hidden>
-          Example uses sibling file <code>KK7LHY_activator_20260501.csv</code>.
+          Example uses <code>https://wlenw6vcgj6yybvc.public.blob.vercel-storage.com/KK7LHY_activator_SYNC-WITH-VERCEL.csv</code>.
         </div>
       </div>
 
@@ -318,7 +318,7 @@
           <input id="chaser-url" type="url" placeholder="https://example.com/chaser.csv" aria-label="Chaser CSV URL">
         </div>
         <div id="chaser-example-source" class="source-input muted" hidden>
-          Example uses sibling file <code>KK7LHY_chaser_20260501.csv</code>.
+          Example uses <code>https://wlenw6vcgj6yybvc.public.blob.vercel-storage.com/KK7LHY_chaser_SYNC-WITH-VERCEL.csv</code>.
         </div>
       </div>
 
@@ -504,8 +504,8 @@
       }
 
       function syncLogSourceInputs() {
-        syncSourceMode("activator-source", activatorInput, activatorUrlInput, "KK7LHY_activator_20260501.csv");
-        syncSourceMode("chaser-source", chaserInput, chaserUrlInput, "KK7LHY_chaser_20260501.csv");
+        syncSourceMode("activator-source", activatorInput, activatorUrlInput, "https://wlenw6vcgj6yybvc.public.blob.vercel-storage.com/KK7LHY_activator_SYNC-WITH-VERCEL.csv");
+        syncSourceMode("chaser-source", chaserInput, chaserUrlInput, "https://wlenw6vcgj6yybvc.public.blob.vercel-storage.com/KK7LHY_chaser_SYNC-WITH-VERCEL.csv");
       }
 
       function setPanelCollapsed(collapsed) {
@@ -781,14 +781,14 @@
             activatorInput,
             activatorUrlInput,
             "activator CSV",
-            "KK7LHY_activator_20260501.csv"
+            "https://wlenw6vcgj6yybvc.public.blob.vercel-storage.com/KK7LHY_activator_SYNC-WITH-VERCEL.csv"
           );
           const chaserSource = await readOptionalLogSource(
             "chaser-source",
             chaserInput,
             chaserUrlInput,
             "chaser CSV",
-            "KK7LHY_chaser_20260501.csv"
+            "https://wlenw6vcgj6yybvc.public.blob.vercel-storage.com/KK7LHY_chaser_SYNC-WITH-VERCEL.csv"
           );
 
           validateLogFormat(activatorSource.text, "activator", activatorSource.sourceLabel || "activator CSV");
